@@ -25,11 +25,11 @@ void Server::setup(Config config) {
     for (int i = 0; i < CLIENT_SIZE; i++) _client_socket[i] = 0;
 }
 
-void Server::reset(fd_set read, fd_set write) {
+void Server::reset(fd_set &read, fd_set &write) {
     FD_SET(_server_socket, &read);
     FD_SET(_server_socket, &write);
 
-    for (int i = 0; i < _max_fd; i++) {
+    for (int i = 0; i < CLIENT_SIZE; i++) {
         if (_client_socket[i] > 0) {
             FD_SET(_client_socket[i], &read);
             if (_response.find(_client_socket[i]) != _response.end())
@@ -38,12 +38,25 @@ void Server::reset(fd_set read, fd_set write) {
     }
 }
 
+void Server::disconnect_all() {
+    for (int i; i < _max_fd; i++) {
+        if (_client_socket[i] > 0) disconnect(i);
+    }   
+}
+
+void Server::disconnect(int i) {
+    _request.erase(_client_socket[i]);
+    _response.erase(_client_socket[i]);
+    close(_client_socket[i]);
+    _client_socket[i] = 0;
+}
+
 void Server::accept_client() {
     int ret;
 
     int addrlen = sizeof(_addr);
     int new_client = accept(_server_socket, (struct sockaddr *)&_addr, (socklen_t *)&addrlen);
-    if (ret == -1) exit(1); /* Throw Error */
+    if (ret == -1) exit(ft_error("ERROR: Accept client error", 1)); /* Throw Error */
 
     if (new_client > _max_fd) _max_fd = new_client;
     fcntl(new_client, F_SETFL, O_NONBLOCK);
@@ -63,20 +76,19 @@ void Server::reading(fd_set read, fd_set write) {
     for(int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &read)) {
             len = recv(_client_socket[i], buffer, 1000, 0);
-            if (len == -1) exit(1); /* exit error */
-            /* else if (len == 0) exit(1); disconnect client */
+            if (len == -1) exit(ft_error("ERROR: recv error", 1)); /* exit error */
+            else if (len == 0) disconnect(i);
             else {
                 buffer[len] = '\0';
                 if (_request[_client_socket[i]].size() == 0)
-                    _request[_client_socket[i]].reserve(100100);
+                    _request[_client_socket[i]].reserve(1001);
                 _request[_client_socket[i]] += buffer;
             }
         }
     }
     
     if (_request.size() != 0) {
-        for (std::map<int, std::string>::iterator it = _request.begin(); it != _request
-        .end(); it++) {
+        for (std::map<int, std::string>::iterator it = _request.begin(); it != _request.end(); it++) {
             /*
                 안되면 받을때 까지 빙빙 돌게 만들어야 함
             */
@@ -92,9 +104,12 @@ void Server::writing(fd_set read, fd_set write) {
         if (FD_ISSET(_client_socket[i], &write)) {
             std::string msg = _response[_client_socket[i]];
             len = send(_client_socket[i], msg.c_str(), msg.size(), MSG_NOSIGNAL);
-            if (len == -1) exit(1); /* restart client */
+            if (len == -1) exit(ft_error("ERROR: send error", 1)); /* restart client */
             else if ((size_t)len < msg.size()) _response[_client_socket[i]] = msg.substr(len, msg.size());
-            else _response.erase(_client_socket[i]);
+            else {
+                _request.erase(_client_socket[i]);
+                _response.erase(_client_socket[i]);
+            }
         }
     }
 }

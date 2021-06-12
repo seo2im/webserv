@@ -29,7 +29,9 @@ class Server {
     
     /* public: */
         void setup(Config config);
-        void reset(fd_set read, fd_set write);
+        void reset(fd_set &read, fd_set &write);
+        void disconnect_all();
+        void disconnect(int i);
         void accept_client();
         void reading(fd_set read, fd_set write);
         void writing(fd_set read, fd_set write);

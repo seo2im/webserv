@@ -15,7 +15,7 @@ class App {
         void init(char *filename);
         void setup();
         void run();
-        void make_connection(fd_set read, fd_set write);
+        void make_connection(fd_set &read, fd_set &write);
 
         std::vector<std::string> convertFile2Block(char *filename);
         

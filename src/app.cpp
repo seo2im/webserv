@@ -45,7 +45,7 @@ void App::run() {
     }
 }
 
-void App::make_connection(fd_set read, fd_set write) {
+void App::make_connection(fd_set &read, fd_set &write) {
     int ret;
     struct  timeval timeout = {1, 0};
     
@@ -53,15 +53,21 @@ void App::make_connection(fd_set read, fd_set write) {
         (*it).reset(read, write);
     }
     ret = select(FD_SETSIZE, &read, &write, NULL, &timeout);
+    std::cout << ret << std::endl;
     if (ret == -1) {
         std::cout << "CONNECTION FAILED: reconnected\n";
         make_connection(read, write);
-    } else if (ret == 0) {
-        /*
-            TODO: some delete connection
-        */
+    } 
+    else if (ret == 0) {
+       FD_ZERO(&read);
+       FD_ZERO(&write);
+
+       for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); it++) {
+            (*it).disconnect_all();
+        }
         make_connection(read, write);
-    } else {
+    } 
+    else {
         for (std::vector<Server>::iterator it = _servers.begin(); it != _servers.end(); it++) {
             if (FD_ISSET((*it)._server_socket, &read)) {
                 (*it).accept_client();
