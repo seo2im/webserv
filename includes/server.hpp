@@ -8,7 +8,8 @@
 #include <arpa/inet.h>
 #include "config.hpp"
 #include "lib.hpp"
-# include <fcntl.h>
+#include <fcntl.h>
+#include "request.hpp"
 
 #define CLIENT_SIZE 100
 

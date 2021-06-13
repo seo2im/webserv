@@ -76,23 +76,23 @@ void Server::reading(fd_set read, fd_set write) {
     for(int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &read)) {
             len = recv(_client_socket[i], buffer, 1000, 0);
-            if (len == -1) exit(ft_error("ERROR: recv error", 1)); /* exit error */
+            if (len == -1) exit(ft_error("ERROR: recv error", 1)); /* TODO: client restart */
             else if (len == 0) disconnect(i);
             else {
                 buffer[len] = '\0';
                 if (_request[_client_socket[i]].size() == 0)
                     _request[_client_socket[i]].reserve(1001);
-                _request[_client_socket[i]] += buffer;
+                _request[_client_socket[i]]+= buffer;
             }
         }
     }
     
     if (_request.size() != 0) {
         for (std::map<int, std::string>::iterator it = _request.begin(); it != _request.end(); it++) {
-            /*
-                안되면 받을때 까지 빙빙 돌게 만들어야 함
-            */
-            _response.insert(std::make_pair((*it).first, (*it).second));
+            size_t	i = (*it).second.find("\r\n\r\n");
+            if (i != std::string::npos) {
+                _response.insert(std::make_pair((*it).first, (*it).second));
+            }
         }
     }
 }
