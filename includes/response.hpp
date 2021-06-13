@@ -6,18 +6,55 @@
 #include <map>
 #include "request.hpp"
 #include "config.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 class Response {
     public:
-        std::string _Method;
-        std::string _Uri;
-        std::string _protocol;
+        int _code;
+        std::string _path;
+        std::string _type;
         std::map<std::string, std::string> _header;
-        std::string _body;
+        std::string _msg;
+        Request _req;
+        Config _config;
+        
+        bool _is_autoindex;
 
         Response(Request &req, Config &config);
 
         std::string to_string();
+        void GET();
+        void HEAD();
+        void POST();
+        void PUT();
+        void DELETE();
+        void OPTIONS();
+        void TRACE();
+
+        int read_data();
+        int write_data(std::string data);
+        std::string make_header();
+        std::string set_type();
+        std::string set_redirect();
+        std::string set_retry();
+        std::string set_auth();
 };
 
 #endif
+
+/*
+    _allow = "";
+	_contentLanguage = "";
+	_contentLength = "";
+	_contentLocation = "";
+	_contentType = "";
+	_date = "";
+	_lastModified = "";
+	_location = "";
+	_retryAfter = "";
+	_server = "";
+	_transferEncoding = "";
+	_wwwAuthenticate = "";
+*/

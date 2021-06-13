@@ -12,6 +12,18 @@ Request::Request(std::string &raw, Config &config) {
     }
 }
 
+Request & Request::operator=(const Request & src) {
+	_raw = src._raw;
+	_uri = src._uri;
+	_method = src._method;
+	_header = src._header;
+	_body = src._body;
+	_code = _code;
+	_port = _port;
+	_cgi = _cgi;
+	return (*this);
+}
+
 void Request::init() {
     _method = "";
     _protocol = "";

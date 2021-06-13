@@ -23,7 +23,9 @@ class Request {
         int _port;
         std::map<std::string, std::string> _cgi;
         
+        Request();
         Request(std::string &req, Config &config);
+        Request & operator=(const Request & src);
 
         std::string chunked_process(std::string &raw);
         void init();
