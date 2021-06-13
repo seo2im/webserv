@@ -53,7 +53,6 @@ void App::make_connection(fd_set &read, fd_set &write) {
         (*it).reset(read, write);
     }
     ret = select(FD_SETSIZE, &read, &write, NULL, &timeout);
-    std::cout << ret << std::endl;
     if (ret == -1) {
         std::cout << "CONNECTION FAILED: reconnected\n";
         make_connection(read, write);

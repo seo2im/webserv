@@ -69,7 +69,7 @@ void Server::accept_client() {
     }
 }
 
-void Server::reading(fd_set read, fd_set write) {
+void Server::recv_from_client(fd_set &read, fd_set &write) {
     int len = -1;
     char buffer[1001];
 
@@ -86,18 +86,49 @@ void Server::reading(fd_set read, fd_set write) {
             }
         }
     }
+}
+
+void Server::reading(fd_set & read, fd_set & write) {
+    recv_from_client(read, write);
     
     if (_request.size() != 0) {
         for (std::map<int, std::string>::iterator it = _request.begin(); it != _request.end(); it++) {
             size_t	i = (*it).second.find("\r\n\r\n");
             if (i != std::string::npos) {
-                _response.insert(std::make_pair((*it).first, (*it).second));
+                if ((*it).second.find("Content-Length: ") == std::string::npos) {
+                    if ((*it).second.find("Transfer-Encoding: chunked") != std::string::npos) {
+                        /*
+                            check chunk is end
+                            if (end is right) {
+                                make_response();
+                            } else {
+                                nothing to do
+                            }
+                        */
+                        return ;
+                    }
+                    else {
+                        make_response((*it).first, (*it).second);
+                        return ;
+                    }
+                }
+
+                size_t len = std::atoi((*it).second.substr((*it).second.find("Content-Length ") + 16, 10).c_str());
+                if ((*it).second.size() >= len + i + 4) {
+                    make_response((*it).first, (*it).second);
+                    return ;
+                }
+                else return ;
             }
         }
     }
 }
 
-void Server::writing(fd_set read, fd_set write) {
+void Server::make_response(int fd, std::string raw) {
+    _response.insert(std::make_pair(fd, raw));
+}
+
+void Server::writing(fd_set &read, fd_set &write) {
     int len;
 
     for (int i = 0; i < _max_fd; i++) {

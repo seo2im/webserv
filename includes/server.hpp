@@ -34,8 +34,10 @@ class Server {
         void disconnect_all();
         void disconnect(int i);
         void accept_client();
-        void reading(fd_set read, fd_set write);
-        void writing(fd_set read, fd_set write);
+        void reading(fd_set &read, fd_set &write);
+        void writing(fd_set &read, fd_set &write);
+        void recv_from_client(fd_set &read, fd_set &write);
+        void make_response(int fd, std::string raw);
 };
 
 #endif
