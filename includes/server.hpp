@@ -10,6 +10,7 @@
 #include "lib.hpp"
 #include <fcntl.h>
 #include "request.hpp"
+#include "response.hpp"
 
 #define CLIENT_SIZE 100
 
@@ -27,9 +28,13 @@ class Server {
 
         struct sockaddr_in _addr;
 
+        Config _config;
+
     
     /* public: */
-        void setup(Config config);
+        Server(Config &config);
+
+        void setup();
         void reset(fd_set &read, fd_set &write);
         void disconnect_all();
         void disconnect(int i);

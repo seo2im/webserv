@@ -2,6 +2,7 @@
 # define REQUEST_HPP
 
 #include "lib.hpp"
+#include "config.hpp"
 #include <string>
 #include <map>
 
@@ -19,8 +20,7 @@ class Request {
         std::string _body;
 
         bool _ready;
-
-        Request();
+        Request(std::string &req, Config &config);
 
         void parse();
         void parse_request_line();

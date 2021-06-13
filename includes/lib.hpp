@@ -6,5 +6,6 @@
 # include <stdlib.h>
 
 int ft_error(std::string, int num);
+bool ft_is_end_string(std::string str, std::string end);
 
 #endif

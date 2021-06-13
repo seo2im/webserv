@@ -11,9 +11,9 @@ void App::init(char *filename) {
 
 void App::setup() {
     for (std::vector<Config>::iterator it = _configs.begin(); it != _configs.end(); it++) {
-        Server server;
-        
-        server.setup(*it);
+        Server server(*it);
+
+        server.setup();
         _servers.push_back(server);
     }
 }

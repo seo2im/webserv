@@ -1,6 +1,10 @@
 #include "server.hpp"
 
-void Server::setup(Config config) {
+Server::Server(Config &config) {
+    _config = config;
+}
+
+void Server::setup() {    
     int ret;
 
     _server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -13,8 +17,8 @@ void Server::setup(Config config) {
     if (ret == -1) exit(ft_error("ERROR: make socket failed", 1));
 
     _addr.sin_family = AF_INET;
-    _addr.sin_addr.s_addr = inet_addr(config._host.c_str());
-    _addr.sin_port = htons(config._port);
+    _addr.sin_addr.s_addr = inet_addr(_config._host.c_str());
+    _addr.sin_port = htons(_config._port);
     
     ret = bind(_server_socket, (struct sockaddr *)&_addr, sizeof(_addr));
     if (ret == -1)  exit(ft_error("ERROR: bind socket failed", 1));
@@ -97,15 +101,13 @@ void Server::reading(fd_set & read, fd_set & write) {
             if (i != std::string::npos) {
                 if ((*it).second.find("Content-Length: ") == std::string::npos) {
                     if ((*it).second.find("Transfer-Encoding: chunked") != std::string::npos) {
-                        /*
-                            check chunk is end
-                            if (end is right) {
-                                make_response();
-                            } else {
-                                nothing to do
-                            }
-                        */
-                        return ;
+                        
+                        if (ft_is_end_string((*it).second, "0\r\n\r\n")) {
+                            make_response((*it).first, (*it).second);
+                            return ;
+                        } else {
+                            return ;
+                        }
                     }
                     else {
                         make_response((*it).first, (*it).second);
@@ -125,7 +127,9 @@ void Server::reading(fd_set & read, fd_set & write) {
 }
 
 void Server::make_response(int fd, std::string raw) {
-    _response.insert(std::make_pair(fd, raw));
+    Request req(raw, _config);
+    Response res(req, _config);
+    _response.insert(std::make_pair(fd, res.to_string()));
 }
 
 void Server::writing(fd_set &read, fd_set &write) {

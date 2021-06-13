@@ -8,10 +8,12 @@
 
 class Config {
     public:
-        Config(std::string blocks);
-
         std::string _host;
         int         _port;
+
+        Config();
+        Config(std::string blocks);
+        Config & operator=(const Config & src);
 
 };
 
