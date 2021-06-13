@@ -13,19 +13,24 @@ class Location {
 class Request {
     public:
         std::string _raw;
-        std::string _Method;
-        std::string _Uri;
+
+        std::string _method;
+        std::string _uri;
         std::string _protocol;
         std::map<std::string, std::string> _header;
         std::string _body;
-
-        bool _ready;
+        int _code;
+        int _port;
+        std::map<std::string, std::string> _cgi;
+        
         Request(std::string &req, Config &config);
 
+        std::string chunked_process(std::string &raw);
+        void init();
         void parse();
-        void parse_request_line();
-        void parse_header();
-        void get_body();
+        std::string parse_request_line(std::string raw);
+        std::string parse_header(std::string raw);
+        std::string parse_body(std::string raw);
 };
 
 #endif
