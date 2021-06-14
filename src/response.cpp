@@ -1,13 +1,87 @@
 #include "response.hpp"
-
+/*
+    결국 config가 필요한 내용은 
+    error page,
+    path,
+    host(문자열? 숫자?),
+    port, autoindex 여부,
+    cgi관련 패스 정도
+    content location 정도
+*/
 Response::Response(Request &req, Config &config) {
     _req = req;
-    _config = _config;
+    _config = config;
+    
     _code = req._code;
+    
+    _is_autoindex = _config._autoindex;
+    _host = _config._host;
+    _port = _config._port;
+    set_path();
+
+    if (_config._allow_methods.find(_req._method) == _config._allow_methods.end()){
+        _code = 405;
+    } 
+    else if (_config._buffer_size < _req._body.size()) _code = 413;
+
+    if (_code == 405 || _code == 413) {
+        /*
+            TODO: not allow method of access
+        */
+        _msg = make_allow_error();
+    }
+
+    if (_req._method == "GET") {
+        GET();
+    } else if (_req._method == "HEAD") {
+        HEAD();
+    } else if (_req._method == "POST") {
+        POST();
+    } else if (_req._method == "PUT") {
+        PUT();
+    } else if (_req._method == "DELETE") {
+        DELETE();
+    } else if (_req._method == "OPTIONS") {
+        OPTIONS();
+    } else if (_req._method == "TRACE") {
+        TRACE();
+    }
 }
 
-std::string Response::to_string() {
-    return "test OK\n";   
+void Response::set_path() {
+    _path = _config._root + "/" + _config._index;
+}
+
+std::string Response::make_allow_error() {
+    _header["Allow"] = set_allow();
+    _header["Content-Language"] = "lang"; /* TODO: set lang witch Accept header*/
+    _header["Content-Location"] = "Content-location" /* TODO: config content location make something */;
+	_header["Content-Length"] = ft_num2string(0);
+    
+    _type = "";
+	_header["Content-Type"] = set_type();
+	
+    _header["Date"] = ft_gettime();
+	_header["Last-Modified"] = ft_gettime(); /* TODO: set file modified time? */
+	_header["Location"] = set_redirect();
+	_header["Retry-After"] = set_retry();
+	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
+	_header["Transfer-Encoding"] = "identity";
+	_header["WWW-Authenticate"] = set_auth();
+
+    std::string header_msg = "HTTP/1.1 ";
+
+    if (_code == 405) header_msg += "405 Method Not Allowed\r\n";
+    else if (_code == 413) header_msg += "413 Payload Too Large\r\n";
+    header_msg += (ft_num2string(_code) \
+            + /* if error insert error in herer*/ " \r\n");
+    for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
+        if ((*it).second != "") {
+            header_msg += ((*it).first + ": " + (*it).second + "\r\n");
+        }
+    }
+
+    return header_msg;
 }
 
 void Response::GET() {
@@ -167,12 +241,32 @@ std::string Response::set_type() {
 
 std::string Response::set_redirect() {
     if (_code == 201 || _code / 100 == 3) return _path;
+    return "";
 }
 
 std::string Response::set_retry() {
     if (_code == 503 || _code == 429 || _code == 301) return "3"; /* TODO: check 3s is standard */
+    return "";
 }
 
 std::string Response::set_auth() {
     if (_code == 401) return "Basic realm=\"Access requires authentification\" charset=\"UTF-8\"";
+    return "";
+}
+
+std::string Response::set_allow() {
+    std::string str;
+
+    for (std::set<std::string>::iterator it = _config._allow_methods.begin(); it != _config._allow_methods.end(); it++) {
+        str += *(it++);
+
+        if (it != _config._allow_methods.end())
+            str += ", ";
+    }
+
+    return str;
+}
+
+std::string Response::to_string() {
+    return _msg;
 }

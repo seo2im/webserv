@@ -82,9 +82,6 @@ std::vector<std::string> App::convertFile2Block (char *filename) {
     std::vector<std::string> blocks;
 
     blocks.push_back("1");
-    blocks.push_back("2");
-    blocks.push_back("3");
-    blocks.push_back("4");
 
     return blocks;
 }

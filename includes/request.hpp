@@ -6,9 +6,9 @@
 #include <string>
 #include <map>
 
-class Location {
+// class Location {
     
-};
+// };
 
 class Request {
     public:

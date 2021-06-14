@@ -1,5 +1,8 @@
 # include "request.hpp"
 
+Request::Request() {
+
+}
 Request::Request(std::string &raw, Config &config) {
     if (raw.find("Transfer-Encoding: chunked") != std::string::npos &&
         raw.find("Transfer-Encoding: chunked") < raw.find("\r\n\r\n")) {
@@ -18,9 +21,9 @@ Request & Request::operator=(const Request & src) {
 	_method = src._method;
 	_header = src._header;
 	_body = src._body;
-	_code = _code;
-	_port = _port;
-	_cgi = _cgi;
+	_code = src._code;
+	_port = src._port;
+	_cgi = src._cgi;
 	return (*this);
 }
 
@@ -102,7 +105,7 @@ void Request::parse() {
 	_body.assign(temp);
 	if (_code != 200) {
 		/*
-			not 200 is error when parse of request message
+			TODO: Ynot 200 is error when parse of request message
 		*/
 	}
 }
@@ -146,6 +149,7 @@ std::string Request::parse_request_line(std::string raw) {
 */
 std::string Request::parse_header(std::string raw) {
 	size_t i = raw.find("\r\n\r\n");
+	if (i == std::string::npos) return "";
 	std::string temp = raw.substr(0, i + 2);
 
 	std::string line;

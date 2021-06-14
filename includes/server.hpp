@@ -18,18 +18,15 @@ class Server {
     public:
         long _host;
         long _port;
+        struct sockaddr_in _addr;
+        int _max_fd;
 
         int _server_socket;
         int _client_socket[CLIENT_SIZE];
         std::map<int, std::string> _request;
         std::map<int, std::string> _response;
 
-        int _max_fd;
-
-        struct sockaddr_in _addr;
-
         Config _config;
-
     
     /* public: */
         Server(Config &config);

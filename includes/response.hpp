@@ -13,6 +13,9 @@
 class Response {
     public:
         int _code;
+        std::string _host;
+        int _port;
+
         std::string _path;
         std::string _type;
         std::map<std::string, std::string> _header;
@@ -24,7 +27,8 @@ class Response {
 
         Response(Request &req, Config &config);
 
-        std::string to_string();
+        std::string make_allow_error();
+        void set_path();
         void GET();
         void HEAD();
         void POST();
@@ -40,6 +44,9 @@ class Response {
         std::string set_redirect();
         std::string set_retry();
         std::string set_auth();
+        std::string set_allow();
+        
+        std::string to_string();
 };
 
 #endif
