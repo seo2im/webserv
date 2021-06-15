@@ -12,10 +12,25 @@ Response::Response(
         Request &req,
         std::map<std::string, Location> locations
     ) {
+
+    if (DEV) {
+        std::cout << req._raw << std::endl;
+    }
+
     _req = req;
     _code = _req._code;
     _locations = locations;
     set_location();
+
+    if (std::find(_methods.begin(), _methods.end(), _req._method) == _methods.end()) {
+        _code = 405;
+    } else if (_buffer_size < _req._body.size()) _code = 413;
+
+    if (_code == 405 || _code == 413) {
+        _msg = make_allow_error();
+        std::cout << _msg << std::endl;
+        return ;
+    }
 
     if (_req._method == "GET") {
         GET();
@@ -33,29 +48,12 @@ Response::Response(
     //     TRACE();
     // }
 }
-//     if (_config._allow_methods.find(_req._method) == _config._allow_methods.end()){
-//         _code = 405;
-//     } 
-//     else if (_config._buffer_size < _req._body.size()) _code = 413;
-
-//     if (_code == 405 || _code == 413) {
-//         /*
-//             TODO: not allow method of access
-//         */
-//         _msg = make_allow_error();
-//     }
-
-
-// }
 
 void Response::set_param(Location location, std::string index) {
     _path = location._root + index;
     _error_page = location._error_page;
     _methods = location._methods;
-
-    if (DEV) {
-        std::cout << "path :" << _path << std::endl;
-    }
+    _buffer_size = location._buffer_size;
 }
 
 void Response::set_location() {
@@ -182,7 +180,7 @@ std::string Response::set_allow() {
     std::string str;
 
     for (std::vector<std::string>::iterator it = _methods.begin(); it != _methods.end(); it++) {
-        str += *(it++);
+        str += *(it);
 
         if (it != _methods.end())
             str += ", ";
@@ -215,37 +213,41 @@ std::string Response::load_html(std::string path) {
 		return ("<!DOCTYPE html>\n<html><title>40404</title><body>There was an error finding your error page</body></html>\n");
 }
 
-// std::string Response::make_allow_error() {
-//     _header["Allow"] = set_allow();
-//     _header["Content-Language"] = "lang"; /* TODO: set lang witch Accept header*/
-//     _header["Content-Location"] = "Content-location" /* TODO: config content location make something */;
-// 	_header["Content-Length"] = ft_num2string(0);
+std::string Response::make_allow_error() {
     
-//     _type = "";
-// 	_header["Content-Type"] = set_type();
+    _header["Allow"] = set_allow();
+    _header["Content-Language"] = "lang"; /* TODO: set lang witch Accept header*/
+    _header["Content-Location"] = "Content-location" /* TODO: config content location make something */;
+	_header["Content-Length"] = ft_num2string(0);
+    
+    _type = "";
+	_header["Content-Type"] = set_type();
 	
-//     _header["Date"] = ft_gettime();
-// 	_header["Last-Modified"] = ft_gettime(); /* TODO: set file modified time? */
-// 	_header["Location"] = set_redirect();
-// 	_header["Retry-After"] = set_retry();
-// 	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
-// 	_header["Transfer-Encoding"] = "identity";
-// 	_header["WWW-Authenticate"] = set_auth();
+    _header["Date"] = ft_gettime();
+	_header["Last-Modified"] = ft_gettime(); /* TODO: set file modified time? */
+	_header["Location"] = set_redirect();
+	_header["Retry-After"] = set_retry();
+	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
+    
+	_header["Transfer-Encoding"] = "identity";
+	_header["WWW-Authenticate"] = set_auth();
 
-//     std::string header_msg = "HTTP/1.1 ";
+    
 
-//     if (_code == 405) header_msg += "405 Method Not Allowed\r\n";
-//     else if (_code == 413) header_msg += "413 Payload Too Large\r\n";
-//     header_msg += (ft_num2string(_code) \
-//             + /* if error insert error in herer*/ " \r\n");
-//     for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
-//         if ((*it).second != "") {
-//             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
-//         }
-//     }
+    std::string header_msg = "HTTP/1.1 ";
 
-//     return header_msg;
-// }
+    if (_code == 405) header_msg += "405 Method Not Allowed\r\n";
+    else if (_code == 413) header_msg += "413 Payload Too Large\r\n";
+    else header_msg += (ft_num2string(_code) \
+            + /* if error insert error in herer*/ " \r\n");
+    for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
+        if ((*it).second != "") {
+            header_msg += ((*it).first + ": " + (*it).second + "\r\n");
+        }
+    }
+
+    return header_msg + "\r\n";
+}
 
 // void Response::HEAD() {
 //     _code = read_data();

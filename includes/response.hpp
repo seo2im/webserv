@@ -4,6 +4,7 @@
 #include "lib.hpp"
 #include <string>
 #include <map>
+#include <algorithm>
 #include "request.hpp"
 #include "config.hpp"
 #include <iostream>
@@ -19,6 +20,7 @@ class Response {
         std::map<std::string, Location> _locations;
         std::map<int, std::string> _error_page;
         std::vector<std::string> _methods;
+        int _buffer_size;
 
         std::string _path;
         std::string _type;

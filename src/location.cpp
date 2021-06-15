@@ -43,9 +43,9 @@ void Location::set_option(std::string key, std::string value) {
         _buffer_size = atoi(value.c_str());
     } else if (key == "error_page") {
         _error_page[404] = value;
-    } else if ("upload") {
+    } else if (key == "upload") {
         _upload_path = value;
-    } else if ("methods") {
+    } else if (key == "methods") {
         _methods = ft_split(value, ',');
     }
 }
@@ -60,4 +60,15 @@ Location &Location::operator=(Location const & src) {
     _upload_path = src._upload_path;
     _methods = src._methods;
     return (*this);
+}
+
+std::ostream &operator<<(std::ostream &out, const Location &loc){
+    out << "ROOT :" << loc._root << std::endl;
+    out << "INDEX :" << loc._index << std::endl;
+    out << "SIZE :" << loc._buffer_size << std::endl;
+    out << "METHODS :";
+    for (std::vector<std::string>::const_iterator it = loc._methods.begin(); it != loc._methods.end(); it++)
+        out << (*it) << ",";
+    out << std::endl;
+    return out;
 }

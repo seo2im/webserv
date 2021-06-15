@@ -45,9 +45,9 @@ void Config::set_option(std::string key, std::string value) {
         _error_page[404] = value;
     } else if (key == "buffer_size") {
         _buffer_size = atoi(value.c_str());
-    } else if ("names") {
+    } else if (key == "names") {
         _names = ft_split(value, ',');
-    } else if ("methods") {
+    } else if (key == "methods") {
         _methods = ft_split(value, ',');
     }
 }
@@ -58,6 +58,7 @@ Config &Config::operator=(Config const &src) {
     _index = src._index;
     _error_page = src._error_page;
     _buffer_size = src._buffer_size;
+    _locations = _locations;
     return (*this);
 }
 
@@ -79,6 +80,14 @@ std::ostream &operator<<(std::ostream &out, const Config &config) {
     out << "PORTS :";
     for (std::vector<int>::const_iterator it = config._ports.begin(); it != config._ports.end(); it++)
         out << (*it) << ",";
+    out << std::endl;
+    out << "METHODS :";
+    for (std::vector<std::string>::const_iterator it = config._methods.begin(); it != config._methods.end(); it++)
+        out << (*it) << ",";
+    out << std::endl;
+    out << "LOCATIONS :";
+    for (std::map<std::string, Location>::const_iterator it = config._locations.begin(); it != config._locations.end(); it++)
+        out << (*it).second << "\n";
     out << std::endl;
     return out;
 }

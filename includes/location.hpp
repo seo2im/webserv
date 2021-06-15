@@ -33,4 +33,6 @@ class Location {
         void set_option(std::string key, std::string value);
 };
 
+std::ostream &operator<<(std::ostream &out, const Location &loc);
+
 #endif
