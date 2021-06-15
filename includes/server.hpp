@@ -26,12 +26,17 @@ class Server {
         std::map<int, std::string> _request;
         std::map<int, std::string> _response;
 
-        Config _config;
+        std::vector<std::string> _names;
+        std::string _root;
+        std::string _index;
+        std::map<int, std::string> _error_page;
+        int _buffer_size;
+        std::vector<std::string> _methods;
+        std::map<std::string, Location> _locations;
+
     
     /* public: */
-        Server(Config &config);
-
-        void setup();
+        Server(std::string host, int port, Config &config);
         void reset(fd_set &read, fd_set &write);
         void disconnect_all();
         void disconnect(int i);

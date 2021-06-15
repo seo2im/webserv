@@ -1,38 +1,32 @@
 #ifndef CONFIG_HPP
 # define CONFIG_HPP
+#include "lib.hpp"
 # include <vector>
-# include <string>
 # include <map>
-# include <set>
-# include <sys/socket.h>
-# include "lib.hpp"
-
-class Location {
-    public: 
-        std::string _host;
-        int _port;
-};
+# include <string>
+# include "location.hpp"
 
 class Config {
     public:
         std::string _host;
-        int _port;
+        std::vector<int> _ports;
         std::vector<std::string> _names;
-        
-
-        // std::map<int, std::string> _error_page;
-        int _buffer_size;
-        // std::map<std::string, std::string> _cgi_oprions;
-        // std::string _cgi_pass;
-        bool _autoindex;
         std::string _root;
         std::string _index;
-        std::set<std::string> _allow_methods;
-        std::string _alias;
+        std::map<int, std::string> _error_page;
+        int _buffer_size;
+        std::vector<std::string> _methods;
+        std::map<std::string, Location> _locations;
 
         Config();
-        Config(std::string blocks);
-        Config & operator=(const Config & src);
+        Config(std::string block);
+        Config &operator=(Config const &src);
+
+        void init();
+        int set_location(std::string loc_path, std::string location_block);
+        void set_option(std::string key, std::string value);
 };
+
+std::ostream &operator<<(std::ostream &out, const Config &config);
 
 #endif

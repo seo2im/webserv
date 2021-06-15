@@ -1,38 +1,84 @@
 #include "config.hpp"
 
 Config::Config() {
-    _host = "127.0.0.1";
-    _port = 80;
+    init();
+    _ports.push_back(80);
 }
 
-Config::Config(std::string blocks) {
-    _host = "127.0.0.1";
-    if (blocks == "1") _port = 4000;
+Config::Config(std::string block) {
+    init();
 
-    _autoindex = false;
-    _buffer_size = 1000000000;
-    _root = "./YoupiBanane";
-    _index = "index.html";
-    _alias = "";
-    _allow_methods.insert("GET");
-    _allow_methods.insert("HEAD");
-    std::cout << *(_allow_methods.find("GET")) << std::endl;
-    // _cgi_pass;
-    // _cgi_params;
-    // _error_page;
+    size_t start = 0;
+    std::string line;
+    std::vector<std::string> option;
+    while ((line = ft_nextline(block, start)) != "") {
+        option = ft_split(line, ' ');
+        if (option.front() == "location") {
+            start += (set_location(option.back(), block.substr(start + line.size() + 1, block.substr(start + line.size() + 1).find("\n\n"))) + line.size() + 1);
+            continue;
+        } else set_option(option.front(), option.back());
+        
+        start += line.size() + 1;
+    }
 }
 
-Config & Config::operator=(const Config & src) {
+int Config::set_location(std::string loc_path, std::string location_block) {
+    Location location(location_block, _host, _ports, _root, _index, _error_page, _buffer_size, _methods);
+    _locations[loc_path] = location;
+    
+    return location_block.size() + 2;
+}
+
+void Config::set_option(std::string key, std::string value) {
+    if (key == "host") {
+        _host = value;
+    } else if (key == "root") {
+        _root = value;
+    } else if (key == "port") {
+        std::vector<std::string> temp = ft_split(value, ',');
+        for(std::vector<std::string>::iterator it = temp.begin(); it != temp.end(); it++) {
+            _ports.push_back(atoi((*it).c_str()));
+        }
+    } else if (key == "index") {
+        _index = value;
+    } else if (key == "error_page") {
+        _error_page[404] = value;
+    } else if (key == "buffer_size") {
+        _buffer_size = atoi(value.c_str());
+    } else if ("names") {
+        _names = ft_split(value, ',');
+    } else if ("methods") {
+        _methods = ft_split(value, ',');
+    }
+}
+
+Config &Config::operator=(Config const &src) {
     _host = src._host;
-    _port = src._port;
-    _names = src._names;
-    _buffer_size = src._buffer_size;
-    _autoindex = src._autoindex;
-    _root = src._root;
+    _ports = src._ports;
     _index = src._index;
-    _allow_methods = src._allow_methods;
-    std::cout << "size: " << _allow_methods.size() << std::endl;
-    _alias = src._alias;
-
+    _error_page = src._error_page;
+    _buffer_size = src._buffer_size;
     return (*this);
+}
+
+void Config::init() {
+    _host = "127.0.0.1";
+    _index = "index.html";
+    _buffer_size = 10000000;
+    _error_page[400] = "./error/400.html";
+    _error_page[403] = "./error/403.html";
+    _error_page[404] = "./error/404.html";
+    _error_page[405] = "./error/405.html";
+    _error_page[410] = "./error/410.html";
+    _error_page[413] = "./error/413.html";
+    _error_page[500] = "./error/500.html";
+}
+
+std::ostream &operator<<(std::ostream &out, const Config &config) {
+    out << "HOST :" << config._host << std::endl;
+    out << "PORTS :";
+    for (std::vector<int>::const_iterator it = config._ports.begin(); it != config._ports.end(); it++)
+        out << (*it) << ",";
+    out << std::endl;
+    return out;
 }

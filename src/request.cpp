@@ -3,7 +3,7 @@
 Request::Request() {
 
 }
-Request::Request(std::string &raw, Config &config) {
+Request::Request(std::string &raw) {
     if (raw.find("Transfer-Encoding: chunked") != std::string::npos &&
         raw.find("Transfer-Encoding: chunked") < raw.find("\r\n\r\n")) {
     	_raw = chunked_process(raw);
@@ -37,27 +37,25 @@ void Request::init() {
 	//_query = ""; //TODO: What it is
 
 	_header.clear();
-	/*
-    _header["Accept-Charsets"] = "";
-	_header["Accept-Language"] = "";
-	_header["Allow"] = "";
-	_header["Auth-Scheme"] = "";
-	_header["Authorization"] = "";
-	_header["Content-Language"] = "";
-	_header["Content-Length"] = "";
-	_header["Content-Location"] = "";
-	_header["Content-Type"] = "";
-	_header["Date"] = "";
-	_header["Host"] = "";
-	_header["Last-Modified"] = "";
-	_header["Location"] = "";
-	_header["Referer"] = "";
-	_header["Retry-After"] = "";
-	_header["Server"] = "";
-	_header["Transfer-Encoding"] = "";
-	_header["User-Agent"] = "";
-	_header["Www-Authenticate"] = "";
-	*/
+    // _header["Accept-Charsets"] = "";
+	// _header["Accept-Language"] = "";
+	// _header["Allow"] = "";
+	// _header["Auth-Scheme"] = "";
+	// _header["Authorization"] = "";
+	// _header["Content-Language"] = "";
+	// _header["Content-Length"] = "";
+	// _header["Content-Location"] = "";
+	// _header["Content-Type"] = "";
+	// _header["Date"] = "";
+	// _header["Host"] = "";
+	// _header["Last-Modified"] = "";
+	// _header["Location"] = "";
+	// _header["Referer"] = "";
+	// _header["Retry-After"] = "";
+	// _header["Server"] = "";
+	// _header["Transfer-Encoding"] = "";
+	// _header["User-Agent"] = "";
+	// _header["Www-Authenticate"] = "";
 	_header["Connection"] = "Keep-Alive";
 }
 /*
@@ -91,17 +89,17 @@ void Request::parse() {
 	std::string temp = _raw;
 	
 	temp = parse_request_line(temp);
-	if (DEV) {
-		std::cout << "method :" << _method << std::endl;
-		std::cout << "uri :" << _uri << std::endl;
-		std::cout << "protocol :" << _protocol << std::endl;
-	}
+	// if (DEV) {
+	// 	std::cout << "method :" << _method << std::endl;
+	// 	std::cout << "uri :" << _uri << std::endl;
+	// 	std::cout << "protocol :" << _protocol << std::endl;
+	// }
 	temp = parse_header(temp);
-	if (DEV) {
-		for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
-			std::cout << (*it).first << ": " << (*it).second << std::endl;
-		}
-	}
+	// if (DEV) {
+	// 	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
+	// 		if ((*it).second != "") std::cout << (*it).first << ": " << (*it).second << std::endl;
+	// 	}
+	// }
 	_body.assign(temp);
 	if (_code != 200) {
 		/*
@@ -131,7 +129,6 @@ std::string Request::parse_request_line(std::string raw) {
 
 	j = request_line.find_first_of(' ');
 	if (j == std::string::npos) {
-		
 		/*
 			400 page: No uri rf
 		*/

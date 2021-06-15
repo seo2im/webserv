@@ -2,19 +2,18 @@
 
 void App::init(char *filename) {
     std::vector<std::string> blocks = convertFile2Block(filename);
-
-    for (std::vector<std::string>::iterator it = blocks.begin(); it != blocks.end(); it++) {
+    for(std::vector<std::string>::iterator it = blocks.begin(); it != blocks.end(); it++) {
         Config config(*it);
         _configs.push_back(config);
     }
 }
 
 void App::setup() {
-    for (std::vector<Config>::iterator it = _configs.begin(); it != _configs.end(); it++) {
-        Server server(*it);
-
-        server.setup();
-        _servers.push_back(server);
+    for(std::vector<Config>::iterator it = _configs.begin(); it != _configs.end(); it++) {
+        for (std::vector<int>::iterator jt = (*it)._ports.begin(); jt != (*it)._ports.end(); jt++) {
+            Server serv((*it)._host, (*jt), (*it));
+            _servers.push_back(serv);
+        }
     }
 }
 
@@ -80,8 +79,20 @@ void App::make_connection(fd_set &read, fd_set &write) {
 */
 std::vector<std::string> App::convertFile2Block (char *filename) {
     std::vector<std::string> blocks;
+    std::ifstream file;
+    std::stringstream ss;
+    std::string str;
 
-    blocks.push_back("1");
-
+    file.open(filename);
+    ss << file.rdbuf();
+    str = ss.str();
+    file.close();
+    
+    size_t i;
+    while (str != "") {
+        i = str.find("\n\n\n");
+        blocks.push_back(str.substr(0, i + 2));
+        str = str.substr(i + 3);
+    }
     return blocks;
 }

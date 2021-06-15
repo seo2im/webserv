@@ -5,9 +5,9 @@ int main(int ac, char *av[]) {
 
     try {
         app.init(av[1]);
-        std::cout << "init Success\n";
+        std::cout << "CONFIG SETTING CLEAR!!\n"; 
         app.setup();
-        std::cout << "setup Success\n";
+        std::cout << "SERVER SETTING CLEAR!!\n"; 
         app.run();
     } catch (std::exception &e) {
 

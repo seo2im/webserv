@@ -16,19 +16,26 @@ class Response {
         std::string _host;
         int _port;
 
+        std::map<std::string, Location> _locations;
+        std::map<int, std::string> _error_page;
+        std::vector<std::string> _methods;
+
         std::string _path;
         std::string _type;
         std::map<std::string, std::string> _header;
         std::string _msg;
         Request _req;
-        Config _config;
         
         bool _is_autoindex;
 
-        Response(Request &req, Config &config);
-
+        Response(
+            Request &req,
+            std::map<std::string, Location> locations
+            );
+        void set_location();
+        void set_param(Location location, std::string index);
         std::string make_allow_error();
-        void set_path();
+        
         void GET();
         void HEAD();
         void POST();
@@ -47,6 +54,7 @@ class Response {
         std::string set_allow();
         
         std::string to_string();
+        std::string load_html(std::string path);
 };
 
 #endif

@@ -8,165 +8,109 @@
     cgi관련 패스 정도
     content location 정도
 */
-Response::Response(Request &req, Config &config) {
+Response::Response(
+        Request &req,
+        std::map<std::string, Location> locations
+    ) {
     _req = req;
-    _config = config;
-    
-    _code = req._code;
-    
-    _is_autoindex = _config._autoindex;
-    _host = _config._host;
-    _port = _config._port;
-    set_path();
-
-    if (_config._allow_methods.find(_req._method) == _config._allow_methods.end()){
-        _code = 405;
-    } 
-    else if (_config._buffer_size < _req._body.size()) _code = 413;
-
-    if (_code == 405 || _code == 413) {
-        /*
-            TODO: not allow method of access
-        */
-        _msg = make_allow_error();
-    }
+    _code = _req._code;
+    _locations = locations;
+    set_location();
 
     if (_req._method == "GET") {
         GET();
-    } else if (_req._method == "HEAD") {
-        HEAD();
-    } else if (_req._method == "POST") {
-        POST();
-    } else if (_req._method == "PUT") {
-        PUT();
-    } else if (_req._method == "DELETE") {
-        DELETE();
-    } else if (_req._method == "OPTIONS") {
-        OPTIONS();
-    } else if (_req._method == "TRACE") {
-        TRACE();
+    }// } else if (_req._method == "HEAD") {
+    //     HEAD();
+    // } else if (_req._method == "POST") {
+    //     POST();
+    // } else if (_req._method == "PUT") {
+    //     PUT();
+    // } else if (_req._method == "DELETE") {
+    //     DELETE();
+    // } else if (_req._method == "OPTIONS") {
+    //     OPTIONS();
+    // } else if (_req._method == "TRACE") {
+    //     TRACE();
+    // }
+}
+//     if (_config._allow_methods.find(_req._method) == _config._allow_methods.end()){
+//         _code = 405;
+//     } 
+//     else if (_config._buffer_size < _req._body.size()) _code = 413;
+
+//     if (_code == 405 || _code == 413) {
+//         /*
+//             TODO: not allow method of access
+//         */
+//         _msg = make_allow_error();
+//     }
+
+
+// }
+
+void Response::set_param(Location location, std::string index) {
+    _path = location._root + index;
+    _error_page = location._error_page;
+    _methods = location._methods;
+
+    if (DEV) {
+        std::cout << "path :" << _path << std::endl;
     }
 }
 
-void Response::set_path() {
-    _path = _config._root + "/" + _config._index;
-}
+void Response::set_location() {
 
-std::string Response::make_allow_error() {
-    _header["Allow"] = set_allow();
-    _header["Content-Language"] = "lang"; /* TODO: set lang witch Accept header*/
-    _header["Content-Location"] = "Content-location" /* TODO: config content location make something */;
-	_header["Content-Length"] = ft_num2string(0);
-    
-    _type = "";
-	_header["Content-Type"] = set_type();
-	
-    _header["Date"] = ft_gettime();
-	_header["Last-Modified"] = ft_gettime(); /* TODO: set file modified time? */
-	_header["Location"] = set_redirect();
-	_header["Retry-After"] = set_retry();
-	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
-	_header["Transfer-Encoding"] = "identity";
-	_header["WWW-Authenticate"] = set_auth();
-
-    std::string header_msg = "HTTP/1.1 ";
-
-    if (_code == 405) header_msg += "405 Method Not Allowed\r\n";
-    else if (_code == 413) header_msg += "413 Payload Too Large\r\n";
-    header_msg += (ft_num2string(_code) \
-            + /* if error insert error in herer*/ " \r\n");
-    for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
-        if ((*it).second != "") {
-            header_msg += ((*it).first + ": " + (*it).second + "\r\n");
-        }
+    if (_req._uri == "") {
+        set_param(_locations["/"], _locations["/"]._index);
+        return ;
     }
 
-    return header_msg;
+    size_t i = _req._uri.find_first_of('/');
+    std::string first_path = _req._uri.substr(0, i);
+    if (_locations.count(first_path) > 0) {
+        if (i == std::string::npos)
+            set_param(_locations[first_path], _locations[first_path]._index);
+        else
+            set_param(_locations[first_path], _req._uri.substr(i + 1)); 
+        return ;
+    }
+
+    // if (_req._uri.find_last_of('.')) {
+    //     if (_locations.count(_req._uri))
+    // }
 }
+
+
 
 void Response::GET() {
     if (false/* cgi flag */) {
 
     }
     else if (_code == 200) _code = read_data();
-    else _msg = "Error code page"; /* TODO: load each code page */
+    else _msg = load_html(_error_page[_code]);
+
+    std::cout << "code :"<< _code << "\n";
 
     /* TODO: check why it need */
-    if (_code == 500) _msg = "500"; /* TODO: load 500 page */
+    if (_code == 500) _msg = load_html(_error_page[500]);
 
     _msg = make_header() + "\r\n" + _msg;
 }
 
-void Response::HEAD() {
-    _code = read_data();
-    _msg = make_header() + "\r\n";
-}
-/*
-    TODO: Check why it no parse of body...
-*/
-void Response::POST() {
-    if (false/* cgi flag */) {
-
-    } else { /* TODO: check post response structure */
-        _code = 204;
-        _msg = "";
-    }
-
-    /* TODO: check why it need */
-    if (_code == 500) _msg = "500"; /* TODO: load 500 page */
-
-    _msg = make_header() + "\r\n" + _msg;
-}
-
-void Response::PUT() {
-    std::string data;
-
-    _msg = "";
-    _code = write_data(_req._body);
-    if (_code != 201 && _code != 204) _msg = "Error page"; /* TODO: load error page */
-
-    _msg = make_header() + "\r\n" + _msg;
-}
-
-void Response::DELETE() {
-    if (ft_checkfile(_path.c_str())) {
-        if (remove(_path.c_str()) == 0) _code = 204;
-        else _code = 403;
-    }
-    else _code = 404;
-
-    if (_code == 403 || _code == 404) _msg = "Error page"; /* TODO: load error page */
-
-    _msg = make_header() + "\r\n" + _msg;
-}
-
-/*
-    TODO: is this same with HEAD?
-*/
-void Response::OPTIONS() {
-    _code = read_data();
-    
-    _msg = make_header() + "\r\n";
-}
-
-void Response::TRACE() {
-    _msg = _req._raw;
-}
 
 int Response::read_data() {
     std::ifstream file;
-    std::stringstream buffer;
+    std::stringstream ss;
     
     if (ft_checkfile(_path.c_str())) {
         file.open(_path.c_str(), std::ifstream::in);
-        /* file fail => 403 */
         if (!file.is_open()) {
-            _msg = "403"; /* TODO: 403 page load */
+            _msg = load_html(_error_page[403]);
             return 403;
         }
 
-        buffer << file.rdbuf();
-        _msg = buffer.str();
+        ss << file.rdbuf();
+        _msg = ss.str();
 
         file.close();
         return 200; /* TODO: check right type */
@@ -177,28 +121,8 @@ int Response::read_data() {
         return 200;
     }
     else {
-        _msg = "404"; /* TODO: 404 page load */
+        _msg = load_html(_error_page[404]);
         return 404;
-    }
-}
-
-int Response::write_data(std::string data) {
-    std::ofstream file;
-
-    if (ft_checkfile(_path.c_str())) {
-        file.open(_path.c_str());
-        if (file.is_open() == false)
-			return (403);
-        file << data;
-        file.close();
-        return 204;
-    } else {
-        file.open(_path.c_str(), std::ofstream::out | std::ofstream::trunc);
-		if (file.is_open() == false)
-			return (403);
-		file << data;
-		file.close();
-		return (201);
     }
 }
 
@@ -217,7 +141,7 @@ std::string Response::make_header() {
 	_header["WWW-Authenticate"] = set_auth();
 
     std::string header_msg = "HTTP/1.1 " + ft_num2string(_code) \
-            + /* if error insert error in herer*/ " \r\n";
+            + "OK" + "\r\n";
     for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
         if ((*it).second != "") {
             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
@@ -257,10 +181,10 @@ std::string Response::set_auth() {
 std::string Response::set_allow() {
     std::string str;
 
-    for (std::set<std::string>::iterator it = _config._allow_methods.begin(); it != _config._allow_methods.end(); it++) {
+    for (std::vector<std::string>::iterator it = _methods.begin(); it != _methods.end(); it++) {
         str += *(it++);
 
-        if (it != _config._allow_methods.end())
+        if (it != _methods.end())
             str += ", ";
     }
 
@@ -270,3 +194,131 @@ std::string Response::set_allow() {
 std::string Response::to_string() {
     return _msg;
 }
+
+std::string Response::load_html(std::string path) {
+    std::ofstream		file;
+	std::stringstream	buffer;
+
+	if (ft_checkfile(path.c_str()))
+	{
+		file.open(path.c_str(), std::ifstream::in);
+		if (file.is_open() == false)
+			return ("<!DOCTYPE html>\n<html><title>40404</title><body>There was an error finding your error page</body></html>\n");
+
+		buffer << file.rdbuf();
+		file.close();
+		_type = "text/html";
+
+		return (buffer.str());
+	}
+	else
+		return ("<!DOCTYPE html>\n<html><title>40404</title><body>There was an error finding your error page</body></html>\n");
+}
+
+// std::string Response::make_allow_error() {
+//     _header["Allow"] = set_allow();
+//     _header["Content-Language"] = "lang"; /* TODO: set lang witch Accept header*/
+//     _header["Content-Location"] = "Content-location" /* TODO: config content location make something */;
+// 	_header["Content-Length"] = ft_num2string(0);
+    
+//     _type = "";
+// 	_header["Content-Type"] = set_type();
+	
+//     _header["Date"] = ft_gettime();
+// 	_header["Last-Modified"] = ft_gettime(); /* TODO: set file modified time? */
+// 	_header["Location"] = set_redirect();
+// 	_header["Retry-After"] = set_retry();
+// 	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
+// 	_header["Transfer-Encoding"] = "identity";
+// 	_header["WWW-Authenticate"] = set_auth();
+
+//     std::string header_msg = "HTTP/1.1 ";
+
+//     if (_code == 405) header_msg += "405 Method Not Allowed\r\n";
+//     else if (_code == 413) header_msg += "413 Payload Too Large\r\n";
+//     header_msg += (ft_num2string(_code) \
+//             + /* if error insert error in herer*/ " \r\n");
+//     for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
+//         if ((*it).second != "") {
+//             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
+//         }
+//     }
+
+//     return header_msg;
+// }
+
+// void Response::HEAD() {
+//     _code = read_data();
+//     _msg = make_header() + "\r\n";
+// }
+// /*
+//     TODO: Check why it no parse of body...
+// */
+// void Response::POST() {
+//     if (false/* cgi flag */) {
+
+//     } else { /* TODO: check post response structure */
+//         _code = 204;
+//         _msg = "";
+//     }
+
+//     /* TODO: check why it need */
+//     if (_code == 500) _msg = load_html(_config._error_page[500]);
+
+//     _msg = make_header() + "\r\n" + _msg;
+// }
+
+// void Response::PUT() {
+//     std::string data;
+
+//     _msg = "";
+//     _code = write_data(_req._body);
+//     if (_code != 201 && _code != 204) _msg = load_html(_config._error_page[_code]);
+
+//     _msg = make_header() + "\r\n" + _msg;
+// }
+
+// void Response::DELETE() {
+//     if (ft_checkfile(_path.c_str())) {
+//         if (remove(_path.c_str()) == 0) _code = 204;
+//         else _code = 403;
+//     }
+//     else _code = 404;
+
+//     if (_code == 403 || _code == 404) _msg = load_html(_config._error_page[_code]);
+
+//     _msg = make_header() + "\r\n" + _msg;
+// }
+
+// /*
+//     TODO: is this same with HEAD?
+// */
+// void Response::OPTIONS() {
+//     _code = read_data();
+    
+//     _msg = make_header() + "\r\n";
+// }
+
+// void Response::TRACE() {
+//     _msg = _req._raw;
+// }
+
+// int Response::write_data(std::string data) {
+//     std::ofstream file;
+
+//     if (ft_checkfile(_path.c_str())) {
+//         file.open(_path.c_str());
+//         if (file.is_open() == false)
+// 			return (403);
+//         file << data;
+//         file.close();
+//         return 204;
+//     } else {
+//         file.open(_path.c_str(), std::ofstream::out | std::ofstream::trunc);
+// 		if (file.is_open() == false)
+// 			return (403);
+// 		file << data;
+// 		file.close();
+// 		return (201);
+//     }
+// }

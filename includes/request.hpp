@@ -24,7 +24,7 @@ class Request {
         std::map<std::string, std::string> _cgi;
         
         Request();
-        Request(std::string &req, Config &config);
+        Request(std::string &raw);
         Request & operator=(const Request & src);
 
         std::string chunked_process(std::string &raw);

@@ -1,10 +1,14 @@
 #include "server.hpp"
 
-Server::Server(Config &config) {
-    _config = config;
-}
-
-void Server::setup() {    
+Server::Server(std::string host, int port, Config &config) {
+    std::cout << host << ":" << port << " is setup...";
+    _names = config._names;
+    _root = config._root;
+    _index = config._index;
+    _error_page = config._error_page;
+    _buffer_size = config._buffer_size;
+    _locations = config._locations;
+    
     int ret;
 
     _server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -17,8 +21,8 @@ void Server::setup() {
     if (ret == -1) exit(ft_error("ERROR: make socket failed", 1));
 
     _addr.sin_family = AF_INET;
-    _addr.sin_addr.s_addr = inet_addr(_config._host.c_str());
-    _addr.sin_port = htons(_config._port);
+    _addr.sin_addr.s_addr = inet_addr(host.c_str());
+    _addr.sin_port = htons(port);
     
     ret = bind(_server_socket, (struct sockaddr *)&_addr, sizeof(_addr));
     if (ret == -1)  exit(ft_error("ERROR: bind socket failed", 1));
@@ -27,6 +31,7 @@ void Server::setup() {
     if (ret == -1)  exit(ft_error("ERROR: listen socket failed", 1));
 
     for (int i = 0; i < CLIENT_SIZE; i++) _client_socket[i] = 0;
+    std::cout << "Server " << host << ":" << port << " is Open!!" << std::endl;
 }
 
 void Server::reset(fd_set &read, fd_set &write) {
@@ -94,14 +99,13 @@ void Server::recv_from_client(fd_set &read, fd_set &write) {
 
 void Server::reading(fd_set & read, fd_set & write) {
     recv_from_client(read, write);
-    
+
     if (_request.size() != 0) {
         for (std::map<int, std::string>::iterator it = _request.begin(); it != _request.end(); it++) {
             size_t	i = (*it).second.find("\r\n\r\n");
             if (i != std::string::npos) {
                 if ((*it).second.find("Content-Length: ") == std::string::npos) {
                     if ((*it).second.find("Transfer-Encoding: chunked") != std::string::npos) {
-                        
                         if (ft_is_end_string((*it).second, "0\r\n\r\n")) {
                             make_response((*it).first, (*it).second);
                             return ;
@@ -127,8 +131,8 @@ void Server::reading(fd_set & read, fd_set & write) {
 }
 
 void Server::make_response(int fd, std::string raw) {
-    Request req(raw, _config);
-    Response res(req, _config);
+    Request request(raw);
+    Response res(request, _locations);
     _response.insert(std::make_pair(fd, res.to_string()));
 }
 
