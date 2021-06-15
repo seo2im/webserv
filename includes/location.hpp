@@ -15,6 +15,7 @@ class Location {
         int _buffer_size;
         std::string _upload_path;
         std::vector<std::string> _methods;
+        std::string _cgi;
         
         Location() {};
         Location(

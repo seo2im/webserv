@@ -21,7 +21,7 @@ class Request {
         std::string _body;
         int _code;
         int _port;
-        std::map<std::string, std::string> _cgi;
+        std::string _cgi;
         
         Request();
         Request(std::string &raw);

@@ -47,6 +47,8 @@ void Location::set_option(std::string key, std::string value) {
         _upload_path = value;
     } else if (key == "methods") {
         _methods = ft_split(value, ',');
+    } else if (key == "cgi") {
+        _cgi = value;
     }
 }
 

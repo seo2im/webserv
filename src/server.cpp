@@ -118,7 +118,6 @@ void Server::reading(fd_set & read, fd_set & write) {
                         return ;
                     }
                 }
-
                 size_t len = std::atoi((*it).second.substr((*it).second.find("Content-Length ") + 16, 10).c_str());
                 if ((*it).second.size() >= len + i + 4) {
                     make_response((*it).first, (*it).second);
@@ -132,7 +131,7 @@ void Server::reading(fd_set & read, fd_set & write) {
 
 void Server::make_response(int fd, std::string raw) {
     Request request(raw);
-    Response res(request, _locations);
+    Response res(request, _locations, _host, _port);
     _response.insert(std::make_pair(fd, res.to_string()));
 }
 
@@ -142,6 +141,7 @@ void Server::writing(fd_set &read, fd_set &write) {
     for (int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &write)) {
             std::string msg = _response[_client_socket[i]];
+            std::cout << msg << std::endl;
             len = send(_client_socket[i], msg.c_str(), msg.size(), MSG_NOSIGNAL);
             if (len == -1) exit(ft_error("ERROR: send error", 1)); /* restart client */
             else if ((size_t)len < msg.size()) _response[_client_socket[i]] = msg.substr(len, msg.size());

@@ -10,17 +10,20 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "cgi.hpp"
 
 class Response {
     public:
         int _code;
-        std::string _host;
+        long _host;
         int _port;
 
         std::map<std::string, Location> _locations;
         std::map<int, std::string> _error_page;
         std::vector<std::string> _methods;
         int _buffer_size;
+        std::string _index;
+        std::string _cgi;
 
         std::string _path;
         std::string _type;
@@ -32,7 +35,9 @@ class Response {
 
         Response(
             Request &req,
-            std::map<std::string, Location> locations
+            std::map<std::string, Location> locations,
+            long host,
+            int port
             );
         void set_location();
         void set_param(Location location, std::string index);

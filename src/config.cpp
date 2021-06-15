@@ -65,7 +65,7 @@ Config &Config::operator=(Config const &src) {
 void Config::init() {
     _host = "127.0.0.1";
     _index = "index.html";
-    _buffer_size = 10000000;
+    _buffer_size = 100000000;
     _error_page[400] = "./error/400.html";
     _error_page[403] = "./error/403.html";
     _error_page[404] = "./error/404.html";

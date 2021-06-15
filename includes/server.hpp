@@ -17,7 +17,7 @@
 class Server {
     public:
         long _host;
-        long _port;
+        int _port;
         struct sockaddr_in _addr;
         int _max_fd;
 

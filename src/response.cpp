@@ -10,7 +10,9 @@
 */
 Response::Response(
         Request &req,
-        std::map<std::string, Location> locations
+        std::map<std::string, Location> locations,
+        long host,
+        int port
     ) {
 
     if (DEV) {
@@ -19,8 +21,12 @@ Response::Response(
 
     _req = req;
     _code = _req._code;
+    _host = host;
+    _port = port;
     _locations = locations;
     set_location();
+
+    std::cout << _buffer_size << std::endl;
 
     if (std::find(_methods.begin(), _methods.end(), _req._method) == _methods.end()) {
         _code = 405;
@@ -34,26 +40,28 @@ Response::Response(
 
     if (_req._method == "GET") {
         GET();
-    }// } else if (_req._method == "HEAD") {
-    //     HEAD();
-    // } else if (_req._method == "POST") {
-    //     POST();
-    // } else if (_req._method == "PUT") {
-    //     PUT();
-    // } else if (_req._method == "DELETE") {
-    //     DELETE();
-    // } else if (_req._method == "OPTIONS") {
-    //     OPTIONS();
-    // } else if (_req._method == "TRACE") {
-    //     TRACE();
-    // }
+    } else if (_req._method == "HEAD") {
+        HEAD();
+    } else if (_req._method == "POST") {
+        POST();
+    } else if (_req._method == "PUT") {
+        PUT();
+    } else if (_req._method == "DELETE") {
+        DELETE();
+    } else if (_req._method == "OPTIONS") {
+        OPTIONS();
+    } else if (_req._method == "TRACE") {
+        TRACE();
+    }
 }
 
 void Response::set_param(Location location, std::string index) {
     _path = location._root + index;
+    _index = location._index;
     _error_page = location._error_page;
     _methods = location._methods;
     _buffer_size = location._buffer_size;
+    _cgi = location._cgi;
 }
 
 void Response::set_location() {
@@ -81,13 +89,29 @@ void Response::set_location() {
 
 
 void Response::GET() {
-    if (false/* cgi flag */) {
+    if (_cgi != "") {
+        Cgi cgi(_req, _path, _host, _port);
+        size_t i = 0;
+        size_t j = _msg.size() - 2;
 
+        _msg = cgi.executeCgi(_cgi);
+
+        while (_msg.find("\r\n\r\n", i) != std::string::npos || _msg.find("\r\n", i) == i)
+		{
+			std::string	str = _msg.substr(i, _msg.find("\r\n", i) - i);
+			if (str.find("Status: ") == 0)
+				_code = std::atoi(str.substr(8, 3).c_str());
+			else if (str.find("Content-Type: ") == 0)
+				_type = str.substr(14, str.size());
+			i += str.size() + 2;
+		}
+		while (_msg.find("\r\n", j) == j)
+			j -= 2;
+
+		_msg = _msg.substr(i, j - i);
     }
     else if (_code == 200) _code = read_data();
     else _msg = load_html(_error_page[_code]);
-
-    std::cout << "code :"<< _code << "\n";
 
     /* TODO: check why it need */
     if (_code == 500) _msg = load_html(_error_page[500]);
@@ -99,8 +123,9 @@ void Response::GET() {
 int Response::read_data() {
     std::ifstream file;
     std::stringstream ss;
+    int is_file;
     
-    if (ft_checkfile(_path.c_str())) {
+    if ((is_file = ft_checkfile(_path.c_str())) == 1) {
         file.open(_path.c_str(), std::ifstream::in);
         if (!file.is_open()) {
             _msg = load_html(_error_page[403]);
@@ -113,12 +138,23 @@ int Response::read_data() {
         file.close();
         return 200; /* TODO: check right type */
     }
-    else if (_is_autoindex) {
-        _msg = "Authindex"; /* TODO: Set AutoIndex */
-        _type = "text/html";
-        return 200;
-    }
-    else {
+    else if (is_file == 2) {
+        if (ft_checkfile((_path + "/" + _index).c_str()) == 1) {
+            file.open(_path.c_str(), std::ifstream::in);
+            if (!file.is_open()) {
+                _msg = load_html(_error_page[403]);
+                return 403;
+            }
+
+            ss << file.rdbuf();
+            _msg = ss.str();
+            file.close();
+            return 200; /* TODO: check right type */
+        } else {
+            _msg = load_html(_error_page[404]);
+            return 404;
+        }
+    } else {
         _msg = load_html(_error_page[404]);
         return 404;
     }
@@ -139,7 +175,7 @@ std::string Response::make_header() {
 	_header["WWW-Authenticate"] = set_auth();
 
     std::string header_msg = "HTTP/1.1 " + ft_num2string(_code) \
-            + "OK" + "\r\n";
+            + " OK" + "\r\n";
     for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
         if ((*it).second != "") {
             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
@@ -197,7 +233,7 @@ std::string Response::load_html(std::string path) {
     std::ofstream		file;
 	std::stringstream	buffer;
 
-	if (ft_checkfile(path.c_str()))
+	if (ft_checkfile(path.c_str()) == 1)
 	{
 		file.open(path.c_str(), std::ifstream::in);
 		if (file.is_open() == false)
@@ -232,8 +268,6 @@ std::string Response::make_allow_error() {
 	_header["Transfer-Encoding"] = "identity";
 	_header["WWW-Authenticate"] = set_auth();
 
-    
-
     std::string header_msg = "HTTP/1.1 ";
 
     if (_code == 405) header_msg += "405 Method Not Allowed\r\n";
@@ -249,78 +283,96 @@ std::string Response::make_allow_error() {
     return header_msg + "\r\n";
 }
 
-// void Response::HEAD() {
-//     _code = read_data();
-//     _msg = make_header() + "\r\n";
-// }
-// /*
-//     TODO: Check why it no parse of body...
-// */
-// void Response::POST() {
-//     if (false/* cgi flag */) {
+void Response::HEAD() {
+    _code = read_data();
+    _msg = make_header() + "\r\n";
+}
+/*
+    TODO: Check why it no parse of body...
+*/
+void Response::POST() {
+    if (_cgi != "") {
+        Cgi cgi(_req, _path, _host, _port);
+        size_t i = 0;
+        size_t j = _msg.size() - 2;
 
-//     } else { /* TODO: check post response structure */
-//         _code = 204;
-//         _msg = "";
-//     }
+        _msg = cgi.executeCgi(_cgi);
 
-//     /* TODO: check why it need */
-//     if (_code == 500) _msg = load_html(_config._error_page[500]);
+        while (_msg.find("\r\n\r\n", i) != std::string::npos || _msg.find("\r\n", i) == i)
+		{
+			std::string	str = _msg.substr(i, _msg.find("\r\n", i) - i);
+			if (str.find("Status: ") == 0)
+				_code = std::atoi(str.substr(8, 3).c_str());
+			else if (str.find("Content-Type: ") == 0)
+				_type = str.substr(14, str.size());
+			i += str.size() + 2;
+		}
+		while (_msg.find("\r\n", j) == j)
+			j -= 2;
 
-//     _msg = make_header() + "\r\n" + _msg;
-// }
+		_msg = _msg.substr(i, j - i);
+    } else { /* TODO: check post response structure */
+        _code = 204;
+        _msg = "";
+    }
 
-// void Response::PUT() {
-//     std::string data;
+    /* TODO: check why it need */
+    if (_code == 500) _msg = load_html(_error_page[500]);
 
-//     _msg = "";
-//     _code = write_data(_req._body);
-//     if (_code != 201 && _code != 204) _msg = load_html(_config._error_page[_code]);
+    _msg = make_header() + "\r\n" + _msg;
+}
 
-//     _msg = make_header() + "\r\n" + _msg;
-// }
+void Response::PUT() {
+    std::string data;
 
-// void Response::DELETE() {
-//     if (ft_checkfile(_path.c_str())) {
-//         if (remove(_path.c_str()) == 0) _code = 204;
-//         else _code = 403;
-//     }
-//     else _code = 404;
+    _msg = "";
+    _code = write_data(_req._body);
+    if (_code != 201 && _code != 204) _msg = load_html(_error_page[_code]);
 
-//     if (_code == 403 || _code == 404) _msg = load_html(_config._error_page[_code]);
+    _msg = make_header() + "\r\n" + _msg;
+}
 
-//     _msg = make_header() + "\r\n" + _msg;
-// }
+void Response::DELETE() {
+    if (ft_checkfile(_path.c_str()) == 1) {
+        if (remove(_path.c_str()) == 0) _code = 204;
+        else _code = 403;
+    }
+    else _code = 404;
 
-// /*
-//     TODO: is this same with HEAD?
-// */
-// void Response::OPTIONS() {
-//     _code = read_data();
+    if (_code == 403 || _code == 404) _msg = load_html(_error_page[_code]);
+
+    _msg = make_header() + "\r\n" + _msg;
+}
+
+/*
+    TODO: is this same with HEAD?
+*/
+void Response::OPTIONS() {
+    _code = read_data();
     
-//     _msg = make_header() + "\r\n";
-// }
+    _msg = make_header() + "\r\n";
+}
 
-// void Response::TRACE() {
-//     _msg = _req._raw;
-// }
+void Response::TRACE() {
+    _msg = _req._raw;
+}
 
-// int Response::write_data(std::string data) {
-//     std::ofstream file;
+int Response::write_data(std::string data) {
+    std::ofstream file;
 
-//     if (ft_checkfile(_path.c_str())) {
-//         file.open(_path.c_str());
-//         if (file.is_open() == false)
-// 			return (403);
-//         file << data;
-//         file.close();
-//         return 204;
-//     } else {
-//         file.open(_path.c_str(), std::ofstream::out | std::ofstream::trunc);
-// 		if (file.is_open() == false)
-// 			return (403);
-// 		file << data;
-// 		file.close();
-// 		return (201);
-//     }
-// }
+    if (ft_checkfile(_path.c_str()) == 1) {
+        file.open(_path.c_str());
+        if (file.is_open() == false)
+			return (403);
+        file << data;
+        file.close();
+        return 204;
+    } else {
+        file.open(_path.c_str(), std::ofstream::out | std::ofstream::trunc);
+		if (file.is_open() == false)
+			return (403);
+		file << data;
+		file.close();
+		return (201);
+    }
+}
