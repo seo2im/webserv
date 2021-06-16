@@ -60,16 +60,15 @@ void Response::set_param(Location location, std::string index) {
     _index = location._index;
     _error_page = location._error_page;
     _methods = location._methods;
-    _buffer_size = location._buffer_size;
+    _buffer_size = location._buffer_size;    
     _cgi = location._cgi;
 }
 
 void Response::set_location() {
-
-    if (_req._uri == "") {
-        set_param(_locations["/"], _locations["/"]._index);
-        return ;
-    }
+    // if (_req._uri == "") {
+    //     set_param(_locations["/"], _locations["/"]._index);
+    //     return ;
+    // }
 
     size_t i = _req._uri.find_first_of('/');
     std::string first_path = _req._uri.substr(0, i);
@@ -81,9 +80,16 @@ void Response::set_location() {
         return ;
     }
 
-    // if (_req._uri.find_last_of('.')) {
-    //     if (_locations.count(_req._uri))
-    // }
+    if ((i = _req._uri.find_last_of('.')) != std::string::npos) {
+        std::string format = _req._uri.substr(i);
+        if (_locations.count(format) > 0) {
+            set_param(_locations[format], _locations[format]._index);
+            return ;
+        }
+    }
+
+    set_param(_locations["/"], _locations["/"]._index);
+
 }
 
 
@@ -292,6 +298,7 @@ void Response::HEAD() {
 */
 void Response::POST() {
     if (_cgi != "") {
+        std::cout << "CGI WORK!!\n";
         Cgi cgi(_req, _path, _host, _port);
         size_t i = 0;
         size_t j = _msg.size() - 2;

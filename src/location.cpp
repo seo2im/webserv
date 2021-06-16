@@ -61,6 +61,7 @@ Location &Location::operator=(Location const & src) {
     _buffer_size = src._buffer_size;
     _upload_path = src._upload_path;
     _methods = src._methods;
+    _cgi = src._cgi;
     return (*this);
 }
 
