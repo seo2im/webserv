@@ -87,6 +87,8 @@ std::string     Cgi::executeCgi(const std::string& scriptName) {
         waitpid(-1, NULL, 0);
         lseek(fdOut, 0, SEEK_SET);
 
+        std::cout << "buffer" << std::endl;
+
         ret = 1;
         while (ret > 0)
         {

@@ -12,7 +12,7 @@
 #include "request.hpp"
 #include "response.hpp"
 
-#define CLIENT_SIZE 100
+#define CLIENT_SIZE 1000
 
 class Server {
     public:

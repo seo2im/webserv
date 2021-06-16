@@ -1,23 +1,11 @@
 #include "response.hpp"
-/*
-    결국 config가 필요한 내용은 
-    error page,
-    path,
-    host(문자열? 숫자?),
-    port, autoindex 여부,
-    cgi관련 패스 정도
-    content location 정도
-*/
+
 Response::Response(
         Request &req,
         std::map<std::string, Location> locations,
         long host,
         int port
     ) {
-
-    if (DEV) {
-        std::cout << req._raw << std::endl;
-    }
 
     _req = req;
     _code = _req._code;
@@ -26,15 +14,13 @@ Response::Response(
     _locations = locations;
     set_location();
 
-    std::cout << _buffer_size << std::endl;
-
     if (std::find(_methods.begin(), _methods.end(), _req._method) == _methods.end()) {
         _code = 405;
-    } else if (_buffer_size < _req._body.size()) _code = 413;
+    } //else if (_buffer_size < _req._body.size()) _code = 413; TODO: test code of cgi size (have to check buffer size)
 
     if (_code == 405 || _code == 413) {
         _msg = make_allow_error();
-        std::cout << _msg << std::endl;
+
         return ;
     }
 
@@ -65,34 +51,41 @@ void Response::set_param(Location location, std::string index) {
 }
 
 void Response::set_location() {
-    // if (_req._uri == "") {
-    //     set_param(_locations["/"], _locations["/"]._index);
-    //     return ;
-    // }
+    size_t i;
 
-    size_t i = _req._uri.find_first_of('/');
+    if ((i = _req._uri == "")) {
+        std::cout << "1\n";
+        set_param(_locations["/"], _locations["/"]._index);
+        return ;
+    }
+
+    i = _req._uri.find_first_of('/');
     std::string first_path = _req._uri.substr(0, i);
     if (_locations.count(first_path) > 0) {
-        if (i == std::string::npos)
+        if (i == std::string::npos) {
             set_param(_locations[first_path], _locations[first_path]._index);
-        else
+        } else {
             set_param(_locations[first_path], _req._uri.substr(i + 1)); 
-        return ;
+        }
+    } else {
+        set_param(_locations["/"], _req._uri);
     }
 
     if ((i = _req._uri.find_last_of('.')) != std::string::npos) {
         std::string format = _req._uri.substr(i);
         if (_locations.count(format) > 0) {
-            set_param(_locations[format], _locations[format]._index);
+            set_allow_params(_locations[format]);
             return ;
         }
     }
-
-    set_param(_locations["/"], _locations["/"]._index);
-
 }
 
-
+void Response::set_allow_params(Location &location) {
+    _cgi = location._cgi;
+    for (std::vector<std::string>::iterator it = location._methods.begin(); it != location._methods.end(); it++) {
+        _methods.push_back((*it));
+    }
+}
 
 void Response::GET() {
     if (_cgi != "") {
@@ -187,7 +180,8 @@ std::string Response::make_header() {
             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
         }
     }
-
+    
+    std::cout << header_msg << std::endl;
     return header_msg;
 }
 
@@ -285,6 +279,8 @@ std::string Response::make_allow_error() {
             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
         }
     }
+    
+    std::cout << header_msg << std::endl;
 
     return header_msg + "\r\n";
 }
@@ -298,7 +294,6 @@ void Response::HEAD() {
 */
 void Response::POST() {
     if (_cgi != "") {
-        std::cout << "CGI WORK!!\n";
         Cgi cgi(_req, _path, _host, _port);
         size_t i = 0;
         size_t j = _msg.size() - 2;

@@ -41,6 +41,7 @@ class Response {
             );
         void set_location();
         void set_param(Location location, std::string index);
+        void set_allow_params(Location &location);
         std::string make_allow_error();
         
         void GET();

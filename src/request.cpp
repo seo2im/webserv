@@ -89,17 +89,7 @@ void Request::parse() {
 	std::string temp = _raw;
 	
 	temp = parse_request_line(temp);
-	// if (DEV) {
-	// 	std::cout << "method :" << _method << std::endl;
-	// 	std::cout << "uri :" << _uri << std::endl;
-	// 	std::cout << "protocol :" << _protocol << std::endl;
-	// }
 	temp = parse_header(temp);
-	// if (DEV) {
-	// 	for (std::map<std::string, std::string>::iterator it = _header.begin(); it != _header.end(); it++) {
-	// 		if ((*it).second != "") std::cout << (*it).first << ": " << (*it).second << std::endl;
-	// 	}
-	// }
 	_body.assign(temp);
 	if (_code != 200) {
 		/*
@@ -117,6 +107,9 @@ void Request::parse() {
 std::string Request::parse_request_line(std::string raw) {
 	size_t i = raw.find("\r\n");
 	std::string request_line = raw.substr(0, i);
+
+	std::cout << "req :" << request_line << std::endl;
+
 	size_t j = request_line.find_first_of(' ');
 	if (j == std::string::npos) {
 		/*

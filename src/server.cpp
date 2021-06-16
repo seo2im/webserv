@@ -65,11 +65,13 @@ void Server::accept_client() {
 
     int addrlen = sizeof(_addr);
     int new_client = accept(_server_socket, (struct sockaddr *)&_addr, (socklen_t *)&addrlen);
-    if (ret == -1) exit(ft_error("ERROR: Accept client error", 1)); /* Throw Error */
+    if (new_client == -1) exit(ft_error("ERROR: Accept client error", 1)); /* Throw Error */
 
     if (new_client > _max_fd) _max_fd = new_client;
     fcntl(new_client, F_SETFL, O_NONBLOCK);
     
+    std::cout << new_client << std::endl;
+
     for (int i = 0; i < _max_fd; i++) {
         if (_client_socket[i] == 0) {
             _client_socket[i] = new_client;
@@ -80,11 +82,11 @@ void Server::accept_client() {
 
 void Server::recv_from_client(fd_set &read, fd_set &write) {
     int len = -1;
-    char buffer[1001];
+    char buffer[65536];
 
     for(int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &read)) {
-            len = recv(_client_socket[i], buffer, 1000, 0);
+            len = recv(_client_socket[i], buffer, 65535, 0);
             if (len == -1) exit(ft_error("ERROR: recv error", 1)); /* TODO: client restart */
             else if (len == 0) disconnect(i);
             else {
@@ -141,7 +143,6 @@ void Server::writing(fd_set &read, fd_set &write) {
     for (int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &write)) {
             std::string msg = _response[_client_socket[i]];
-            std::cout << msg << std::endl;
             len = send(_client_socket[i], msg.c_str(), msg.size(), MSG_NOSIGNAL);
             if (len == -1) exit(ft_error("ERROR: send error", 1)); /* restart client */
             else if ((size_t)len < msg.size()) _response[_client_socket[i]] = msg.substr(len, msg.size());
