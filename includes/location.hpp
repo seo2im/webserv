@@ -12,7 +12,7 @@ class Location {
         std::string _root;
         std::string _index;
         std::map<int, std::string> _error_page;
-        int _buffer_size;
+        size_t _buffer_size;
         std::string _upload_path;
         std::vector<std::string> _methods;
         std::string _cgi;

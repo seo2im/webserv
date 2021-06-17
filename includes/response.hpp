@@ -21,7 +21,7 @@ class Response {
         std::map<std::string, Location> _locations;
         std::map<int, std::string> _error_page;
         std::vector<std::string> _methods;
-        int _buffer_size;
+        size_t _buffer_size;
         std::string _index;
         std::string _cgi;
 

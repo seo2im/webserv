@@ -70,7 +70,7 @@ void Server::accept_client() {
     if (new_client > _max_fd) _max_fd = new_client;
     fcntl(new_client, F_SETFL, O_NONBLOCK);
     
-    std::cout << new_client << std::endl;
+    // std::cout << new_client << std::endl;
 
     for (int i = 0; i < _max_fd; i++) {
         if (_client_socket[i] == 0) {
@@ -87,7 +87,12 @@ void Server::recv_from_client(fd_set &read, fd_set &write) {
     for(int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &read)) {
             len = recv(_client_socket[i], buffer, 65535, 0);
-            if (len == -1) exit(ft_error("ERROR: recv error", 1)); /* TODO: client restart */
+            if (len == -1) {
+                _request.erase(_client_socket[i]);
+                _response.erase(_client_socket[i]);
+	            
+                //exit(ft_error("ERROR: recv error", 1));/* TODO: client restart */
+            } 
             else if (len == 0) disconnect(i);
             else {
                 buffer[len] = '\0';
@@ -131,8 +136,9 @@ void Server::reading(fd_set & read, fd_set & write) {
     }
 }
 
-void Server::make_response(int fd, std::string raw) {
+void Server::make_response(int fd, std::string raw) {    
     Request request(raw);
+    // std::cout << request << std::endl; //TESTING CODE
     Response res(request, _locations, _host, _port);
     _response.insert(std::make_pair(fd, res.to_string()));
 }
@@ -142,6 +148,7 @@ void Server::writing(fd_set &read, fd_set &write) {
 
     for (int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &write)) {
+            // std::cout << "send !!\n"; //TESTING CODE
             std::string msg = _response[_client_socket[i]];
             len = send(_client_socket[i], msg.c_str(), msg.size(), MSG_NOSIGNAL);
             if (len == -1) exit(ft_error("ERROR: send error", 1)); /* restart client */

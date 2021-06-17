@@ -24,6 +24,10 @@ Cgi::Cgi(Request &req, std::string path, long host, int port) {
     _options["SERVER_PORT"] = ft_num2string(port);
     _options["SERVER_PROTOCOL"] = "HTTP/1.1";
     _options["SERVER_SOFTWARE"] = "Weebserv/1.0";
+    if (req._header.count("X-Secret-Header-For-Test") > 0) {
+        _options["HTTP_X_SECRET_HEADER_FOR_TEST"] = req._header["X-Secret-Header-For-Test"];
+    }
+        
 }
 
 char **Cgi::_getEnvAsCstrArray() const {
@@ -76,7 +80,6 @@ std::string     Cgi::executeCgi(const std::string& scriptName) {
 
         dup2(fdIn, STDIN_FILENO);
         dup2(fdOut, STDOUT_FILENO);
-        std::cerr << "script :" << scriptName << std::endl;
         execve(scriptName.c_str(), nll, env);
         std::cerr << strerror(errno) << std::endl;
         std::cerr << "Execve crashed." << std::endl;
@@ -87,7 +90,7 @@ std::string     Cgi::executeCgi(const std::string& scriptName) {
         waitpid(-1, NULL, 0);
         lseek(fdOut, 0, SEEK_SET);
 
-        std::cout << "buffer" << std::endl;
+        //std::cout << "buffer" << std::endl; //TESTING CODE
 
         ret = 1;
         while (ret > 0)

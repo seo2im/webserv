@@ -35,6 +35,8 @@ class Request {
         std::string parse_body(std::string raw);
 };
 
+std::ostream &operator<<(std::ostream &out, const Request &req);
+
 #endif
 
 /*

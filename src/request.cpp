@@ -34,28 +34,8 @@ void Request::init() {
     _body = "";
     _port = 80;
     _uri = "";
-	//_query = ""; //TODO: What it is
 
 	_header.clear();
-    // _header["Accept-Charsets"] = "";
-	// _header["Accept-Language"] = "";
-	// _header["Allow"] = "";
-	// _header["Auth-Scheme"] = "";
-	// _header["Authorization"] = "";
-	// _header["Content-Language"] = "";
-	// _header["Content-Length"] = "";
-	// _header["Content-Location"] = "";
-	// _header["Content-Type"] = "";
-	// _header["Date"] = "";
-	// _header["Host"] = "";
-	// _header["Last-Modified"] = "";
-	// _header["Location"] = "";
-	// _header["Referer"] = "";
-	// _header["Retry-After"] = "";
-	// _header["Server"] = "";
-	// _header["Transfer-Encoding"] = "";
-	// _header["User-Agent"] = "";
-	// _header["Www-Authenticate"] = "";
 	_header["Connection"] = "Keep-Alive";
 }
 /*
@@ -108,7 +88,7 @@ std::string Request::parse_request_line(std::string raw) {
 	size_t i = raw.find("\r\n");
 	std::string request_line = raw.substr(0, i);
 
-	std::cout << "req :" << request_line << std::endl;
+	// std::cout << "req :" << request_line << std::endl; //TESTING CODE
 
 	size_t j = request_line.find_first_of(' ');
 	if (j == std::string::npos) {
@@ -161,4 +141,13 @@ std::string Request::parse_header(std::string raw) {
 		j = temp.find("\r\n");
 	}
 	return raw.substr(i + 4);
+}
+
+std::ostream &operator<<(std::ostream &out, const Request &req) {
+	out << req._method << " " << req._uri << " " << req._protocol << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = req._header.begin(); it != req._header.end(); it++ ) {
+		out << (*it).first << " :" << (*it).second << std::endl;
+	}
+
+	return out;
 }

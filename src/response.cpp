@@ -16,29 +16,36 @@ Response::Response(
 
     if (std::find(_methods.begin(), _methods.end(), _req._method) == _methods.end()) {
         _code = 405;
-    } //else if (_buffer_size < _req._body.size()) _code = 413; TODO: test code of cgi size (have to check buffer size)
+    } else if (_buffer_size < _req._body.size() - 4) _code = 413; //TODO: test code of cgi size (have to check buffer size)
+
+    
+    // std::cout << "this is sparta" << std::endl;
+    // std::cout << "size" <<  _buffer_size <<std::endl;
+    // std::cout << "real" << _req._body.size() <<  std::endl;
 
     if (_code == 405 || _code == 413) {
+        // std::cout << "WORK\n" << std::endl;
         _msg = make_allow_error();
-
-        return ;
+        // std::cout << _msg << std::endl;
+    } else {
+        if (_req._method == "GET") {
+            GET();
+        } else if (_req._method == "HEAD") {
+            HEAD();
+        } else if (_req._method == "POST") {
+            POST();
+        } else if (_req._method == "PUT") {
+            PUT();
+        } else if (_req._method == "DELETE") {
+            DELETE();
+        } else if (_req._method == "OPTIONS") {
+            OPTIONS();
+        } else if (_req._method == "TRACE") {
+            TRACE();
+        }
     }
 
-    if (_req._method == "GET") {
-        GET();
-    } else if (_req._method == "HEAD") {
-        HEAD();
-    } else if (_req._method == "POST") {
-        POST();
-    } else if (_req._method == "PUT") {
-        PUT();
-    } else if (_req._method == "DELETE") {
-        DELETE();
-    } else if (_req._method == "OPTIONS") {
-        OPTIONS();
-    } else if (_req._method == "TRACE") {
-        TRACE();
-    }
+    
 }
 
 void Response::set_param(Location location, std::string index) {
@@ -54,7 +61,6 @@ void Response::set_location() {
     size_t i;
 
     if ((i = _req._uri == "")) {
-        std::cout << "1\n";
         set_param(_locations["/"], _locations["/"]._index);
         return ;
     }
@@ -181,7 +187,7 @@ std::string Response::make_header() {
         }
     }
     
-    std::cout << header_msg << std::endl;
+    // std::cout << header_msg << std::endl; //TESTING CODE
     return header_msg;
 }
 
@@ -280,7 +286,7 @@ std::string Response::make_allow_error() {
         }
     }
     
-    std::cout << header_msg << std::endl;
+    // std::cout << header_msg << std::endl; //TESTING CODE
 
     return header_msg + "\r\n";
 }
@@ -295,24 +301,30 @@ void Response::HEAD() {
 void Response::POST() {
     if (_cgi != "") {
         Cgi cgi(_req, _path, _host, _port);
-        size_t i = 0;
-        size_t j = _msg.size() - 2;
 
         _msg = cgi.executeCgi(_cgi);
-
-        while (_msg.find("\r\n\r\n", i) != std::string::npos || _msg.find("\r\n", i) == i)
-		{
-			std::string	str = _msg.substr(i, _msg.find("\r\n", i) - i);
-			if (str.find("Status: ") == 0)
-				_code = std::atoi(str.substr(8, 3).c_str());
-			else if (str.find("Content-Type: ") == 0)
-				_type = str.substr(14, str.size());
-			i += str.size() + 2;
-		}
-		while (_msg.find("\r\n", j) == j)
-			j -= 2;
-
-		_msg = _msg.substr(i, j - i);
+        
+        size_t i = _msg.find("\r\n\r\n");
+        size_t j = _msg.size();
+        
+        std::string	str = _msg.substr(0, i);
+        if (str.find("Status: ") == 0)
+		    _code = std::atoi(str.substr(8, 3).c_str());
+        else if (str.find("Content-Type: ") == 0)
+		    _type = str.substr(14, str.size());
+        i = i + 4;
+		j =_msg.substr(i + 1).find("\r\n\r\n");
+        if (j == std::string::npos) {
+            j = _msg.size() - i - 1;
+        }
+			
+		_msg = _msg.substr(i + 4, i + j + 1);
+        // std::cout << "i : " << i << std::endl;
+        // std::cout << "j : " << j << std::endl;
+        // std::cout << "body : " << _msg.size() << std::endl; //TESTING CODE
+        // std::cout << "start : " <<_msg.substr(0, 5) << std::endl;
+        // std::cout << "end : " <<_msg.substr(_msg.size() - 5) << std::endl;
+        
     } else { /* TODO: check post response structure */
         _code = 204;
         _msg = "";
