@@ -82,22 +82,20 @@ void Server::accept_client() {
 
 void Server::recv_from_client(fd_set &read, fd_set &write) {
     int len = -1;
-    char buffer[65536];
+    char buffer[1000001];
 
     for(int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &read)) {
-            len = recv(_client_socket[i], buffer, 65535, 0);
+            len = recv(_client_socket[i], buffer, 1000000, 0);
             if (len == -1) {
                 _request.erase(_client_socket[i]);
                 _response.erase(_client_socket[i]);
-	            
-                //exit(ft_error("ERROR: recv error", 1));/* TODO: client restart */
             } 
             else if (len == 0) disconnect(i);
             else {
                 buffer[len] = '\0';
                 if (_request[_client_socket[i]].size() == 0)
-                    _request[_client_socket[i]].reserve(1001);
+                    _request[_client_socket[i]].reserve(1000000100);
                 _request[_client_socket[i]]+= buffer;
             }
         }
@@ -141,6 +139,7 @@ void Server::make_response(int fd, std::string raw) {
     // std::cout << request << std::endl; //TESTING CODE
     Response res(request, _locations, _host, _port);
     _response.insert(std::make_pair(fd, res.to_string()));
+    _request.erase(fd);
 }
 
 void Server::writing(fd_set &read, fd_set &write) {
@@ -151,10 +150,13 @@ void Server::writing(fd_set &read, fd_set &write) {
             // std::cout << "send !!\n"; //TESTING CODE
             std::string msg = _response[_client_socket[i]];
             len = send(_client_socket[i], msg.c_str(), msg.size(), MSG_NOSIGNAL);
-            if (len == -1) exit(ft_error("ERROR: send error", 1)); /* restart client */
+            std::cout << len << std::endl;
+            if (len == -1) {
+                _request.erase(_client_socket[i]);
+                _response.erase(_client_socket[i]);
+            }
             else if ((size_t)len < msg.size()) _response[_client_socket[i]] = msg.substr(len, msg.size());
             else {
-                _request.erase(_client_socket[i]);
                 _response.erase(_client_socket[i]);
             }
         }
