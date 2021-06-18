@@ -172,7 +172,7 @@ std::string Response::make_header() {
 	_header["Last-Modified"] = set_last_modified();
 	_header["Location"] = set_redirect();
 	_header["Retry-After"] = set_retry();
-	_header["Server"] = (_name == "") ? "HTTP(Unix)" : _name; /* TODO: Anything? */
+	_header["Server"] = (_name == "") ? "HTTP(Unix)" : _name;
 	_header["Transfer-Encoding"] = "identity";
 	_header["WWW-Authenticate"] = set_auth();
 
@@ -254,8 +254,8 @@ std::string Response::load_html(std::string path) {
 std::string Response::make_allow_error() {
     
     _header["Allow"] = set_allow();
-    _header["Content-Language"] = "lang"; /* TODO: set lang witch Accept header*/
-    _header["Content-Location"] = "Content-location" /* TODO: config content location make something */;
+    _header["Content-Language"] = ""; /* TODO: set lang witch Accept header*/
+    _header["Content-Location"] = _path; /* TODO: config content location make something */;
 	_header["Content-Length"] = ft_num2string(0);
     
     _type = "";
@@ -265,7 +265,7 @@ std::string Response::make_allow_error() {
 	_header["Last-Modified"] = set_last_modified(); /* TODO: set file modified time? */
 	_header["Location"] = set_redirect();
 	_header["Retry-After"] = set_retry();
-	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
+	_header["Server"] = (_name == "") ? "HTTP(Unix)" : _name;
     
 	_header["Transfer-Encoding"] = "identity";
 	_header["WWW-Authenticate"] = set_auth();
