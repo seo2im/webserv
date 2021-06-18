@@ -10,7 +10,7 @@ class Config {
     public:
         std::string _host;
         std::vector<int> _ports;
-        std::vector<std::string> _names;
+        std::string _name;
         std::string _root;
         std::string _index;
         std::map<int, std::string> _error_page;

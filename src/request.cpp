@@ -88,8 +88,6 @@ std::string Request::parse_request_line(std::string raw) {
 	size_t i = raw.find("\r\n");
 	std::string request_line = raw.substr(0, i);
 
-	// std::cout << "req :" << request_line << std::endl; //TESTING CODE
-
 	size_t j = request_line.find_first_of(' ');
 	if (j == std::string::npos) {
 		/*

@@ -7,11 +7,10 @@
 # include <sys/time.h>
 
 class App {
-    private:
+    public:
         std::vector<Config> _configs;
         std::vector<Server> _servers;
     
-    public:
         void init(char *filename);
         void setup();
         void run();

@@ -5,7 +5,6 @@
 # include <string.h>
 # include <sys/wait.h>
 # include <cstdio>
-# include <errno.h>
 
 class Cgi {
     public:

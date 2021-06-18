@@ -26,7 +26,7 @@ class Server {
         std::map<int, std::string> _request;
         std::map<int, std::string> _response;
 
-        std::vector<std::string> _names;
+        std::string _name;
         std::string _root;
         std::string _index;
         std::map<int, std::string> _error_page;
@@ -45,6 +45,14 @@ class Server {
         void writing(fd_set &read, fd_set &write);
         void recv_from_client(fd_set &read, fd_set &write);
         void make_response(int fd, std::string raw);
+        void close_server();
+        
+        class SocketException : public std::exception {
+            public :
+                const char* what() {
+                    return "SOCKET PROBLEM";
+                }
+        };
 };
 
 #endif

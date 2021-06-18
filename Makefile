@@ -7,7 +7,7 @@ SRC = main.cpp ./src/*.cpp ./lib/*.cpp
 all: $(TARGET)
 
 $(TARGET): $(SRC)
-	$(CC) $(FLAG) -o $(TARGET) $(SRC) $(HEADER)
+	$(CC) $(FLAG) -o $(TARGET) $(SRC) $(HEADER) -fsanitize=address -g3
 
 clean:
 	rm -rf $(TARGET)

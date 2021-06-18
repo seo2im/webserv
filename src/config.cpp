@@ -45,8 +45,8 @@ void Config::set_option(std::string key, std::string value) {
         _error_page[404] = value;
     } else if (key == "buffer_size") {
         _buffer_size = atoi(value.c_str());
-    } else if (key == "names") {
-        _names = ft_split(value, ',');
+    } else if (key == "name") {
+        _name = value;
     } else if (key == "methods") {
         _methods = ft_split(value, ',');
     }
@@ -59,12 +59,14 @@ Config &Config::operator=(Config const &src) {
     _error_page = src._error_page;
     _buffer_size = src._buffer_size;
     _locations = _locations;
+    _name = src._name;
     return (*this);
 }
 
 void Config::init() {
     _host = "127.0.0.1";
     _index = "index.html";
+    _name = "";
     _buffer_size = std::string::npos;
     _error_page[400] = "./error/400.html";
     _error_page[403] = "./error/403.html";

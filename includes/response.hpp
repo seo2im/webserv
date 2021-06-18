@@ -24,6 +24,7 @@ class Response {
         size_t _buffer_size;
         std::string _index;
         std::string _cgi;
+        std::string _name;
 
         std::string _path;
         std::string _type;
@@ -37,7 +38,8 @@ class Response {
             Request &req,
             std::map<std::string, Location> locations,
             long host,
-            int port
+            int port,
+            std::string name
             );
         void set_location();
         void set_param(Location location, std::string index);
@@ -63,6 +65,7 @@ class Response {
         
         std::string to_string();
         std::string load_html(std::string path);
+        std::string set_last_modified();
 };
 
 #endif

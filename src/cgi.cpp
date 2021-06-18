@@ -81,7 +81,6 @@ std::string     Cgi::executeCgi(const std::string& scriptName) {
         dup2(fdIn, STDIN_FILENO);
         dup2(fdOut, STDOUT_FILENO);
         execve(scriptName.c_str(), nll, env);
-        std::cerr << strerror(errno) << std::endl;
         std::cerr << "Execve crashed." << std::endl;
         write(STDOUT_FILENO, "Status: 500\r\n\r\n", 15);
     } else {
@@ -89,8 +88,6 @@ std::string     Cgi::executeCgi(const std::string& scriptName) {
 
         waitpid(-1, NULL, 0);
         lseek(fdOut, 0, SEEK_SET);
-
-        //std::cout << "buffer" << std::endl; //TESTING CODE
 
         ret = 1;
         while (ret > 0)

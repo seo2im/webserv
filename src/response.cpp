@@ -4,7 +4,8 @@ Response::Response(
         Request &req,
         std::map<std::string, Location> locations,
         long host,
-        int port
+        int port,
+        std::string name
     ) {
 
     _req = req;
@@ -12,6 +13,7 @@ Response::Response(
     _host = host;
     _port = port;
     _locations = locations;
+    _name = name;
     set_location();
 
     if (std::find(_methods.begin(), _methods.end(), _req._method) == _methods.end()) {
@@ -19,14 +21,9 @@ Response::Response(
     } else if (_buffer_size < _req._body.size() - 4) _code = 413; //TODO: test code of cgi size (have to check buffer size)
 
     
-    // std::cout << "this is sparta" << std::endl;
-    // std::cout << "size" <<  _buffer_size <<std::endl;
-    // std::cout << "real" << _req._body.size() <<  std::endl;
 
     if (_code == 405 || _code == 413) {
-        // std::cout << "WORK\n" << std::endl;
         _msg = make_allow_error();
-        // std::cout << _msg << std::endl;
     } else {
         if (_req._method == "GET") {
             GET();
@@ -167,15 +164,15 @@ int Response::read_data() {
 
 std::string Response::make_header() {
     _header["Allow"] = "";
-    _header["Content-Language"] = "lang"; /* TODO: set lang witch Accept header*/
+    _header["Content-Language"] = ""; /* TODO: set lang witch Accept header*/
     _header["Content-Location"] = _path;
 	_header["Content-Length"] = ft_num2string(_msg.size());
 	_header["Content-Type"] = set_type();
 	_header["Date"] = ft_gettime();
-	_header["Last-Modified"] = ft_gettime(); /* TODO: set file modified time? */
+	_header["Last-Modified"] = set_last_modified();
 	_header["Location"] = set_redirect();
 	_header["Retry-After"] = set_retry();
-	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
+	_header["Server"] = (_name == "") ? "HTTP(Unix)" : _name; /* TODO: Anything? */
 	_header["Transfer-Encoding"] = "identity";
 	_header["WWW-Authenticate"] = set_auth();
 
@@ -186,8 +183,7 @@ std::string Response::make_header() {
             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
         }
     }
-    
-    // std::cout << header_msg << std::endl; //TESTING CODE
+
     return header_msg;
 }
 
@@ -266,7 +262,7 @@ std::string Response::make_allow_error() {
 	_header["Content-Type"] = set_type();
 	
     _header["Date"] = ft_gettime();
-	_header["Last-Modified"] = ft_gettime(); /* TODO: set file modified time? */
+	_header["Last-Modified"] = set_last_modified(); /* TODO: set file modified time? */
 	_header["Location"] = set_redirect();
 	_header["Retry-After"] = set_retry();
 	_header["Server"] = "HTTP(Unix)"; /* TODO: Anything? */
@@ -285,8 +281,6 @@ std::string Response::make_allow_error() {
             header_msg += ((*it).first + ": " + (*it).second + "\r\n");
         }
     }
-    
-    // std::cout << header_msg << std::endl; //TESTING CODE
 
     return header_msg + "\r\n";
 }
@@ -319,11 +313,6 @@ void Response::POST() {
         }
 			
 		_msg = _msg.substr(i + 4, i + j + 1);
-        // std::cout << "i : " << i << std::endl;
-        // std::cout << "j : " << j << std::endl;
-        // std::cout << "body : " << _msg.size() << std::endl; //TESTING CODE
-        // std::cout << "start : " <<_msg.substr(0, 5) << std::endl;
-        // std::cout << "end : " <<_msg.substr(_msg.size() - 5) << std::endl;
         
     } else { /* TODO: check post response structure */
         _code = 204;
@@ -389,4 +378,18 @@ int Response::write_data(std::string data) {
 		file.close();
 		return (201);
     }
+}
+
+std::string Response::set_last_modified() {
+    char buffer[100];
+	struct stat stats;
+	struct tm *tm;
+
+	if (stat(_path.c_str(), &stats) == 0)
+	{
+		tm = gmtime(&stats.st_mtime);
+		strftime(buffer, 100, "%a, %d %b %Y %H:%M:%S GMT", tm);
+		return std::string(buffer);
+	}
+    return "";
 }
