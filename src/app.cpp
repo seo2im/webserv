@@ -30,8 +30,8 @@ void App::run() {
                 FD_ZERO(&write);
                 make_connection(read, write);
                 while (server != _servers.end()) {
-                    (*server).reading(read, write);
-                    (*server).writing(read, write);
+                    (*server).reading(read);
+                    (*server).writing(write);
                     server++;
                 }
                 server = _servers.begin();

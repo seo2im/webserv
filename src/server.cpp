@@ -48,7 +48,7 @@ void Server::reset(fd_set &read, fd_set &write) {
 }
 
 void Server::disconnect_all() {
-    for (int i; i < _max_fd; i++) {
+    for (int i = 0; i < _max_fd; i++) {
         if (_client_socket[i] > 0) disconnect(i);
     }   
 }
@@ -61,8 +61,6 @@ void Server::disconnect(int i) {
 }
 
 void Server::accept_client() {
-    int ret;
-
     int addrlen = sizeof(_addr);
     int new_client = accept(_server_socket, (struct sockaddr *)&_addr, (socklen_t *)&addrlen);
     if (new_client == -1) exit(ft_error("ERROR: Accept client error", 1)); /* Throw Error */
@@ -78,7 +76,7 @@ void Server::accept_client() {
     }
 }
 
-void Server::recv_from_client(fd_set &read, fd_set &write) {
+void Server::recv_from_client(fd_set &read) {
     int len = -1;
     char buffer[1000001];
 
@@ -100,8 +98,8 @@ void Server::recv_from_client(fd_set &read, fd_set &write) {
     }
 }
 
-void Server::reading(fd_set & read, fd_set & write) {
-    recv_from_client(read, write);
+void Server::reading(fd_set & read) {
+    recv_from_client(read);
 
     if (_request.size() != 0) {
         for (std::map<int, std::string>::iterator it = _request.begin(); it != _request.end(); it++) {
@@ -134,18 +132,20 @@ void Server::reading(fd_set & read, fd_set & write) {
 
 void Server::make_response(int fd, std::string raw) {    
     Request request(raw);
+    std::cout << request._method << std::endl;
     Response res(request, _locations, _host, _port, _name);
     _response.insert(std::make_pair(fd, res.to_string()));
     _request.erase(fd);
 }
 
-void Server::writing(fd_set &read, fd_set &write) {
+void Server::writing(fd_set &write) {
     int len;
 
     for (int i = 0; i < _max_fd; i++) {
         if (FD_ISSET(_client_socket[i], &write)) {
             std::string msg = _response[_client_socket[i]];
-            len = send(_client_socket[i], msg.c_str(), msg.size(), MSG_NOSIGNAL);
+            len = send(_client_socket[i], msg.c_str(), msg.size(), 0);
+            std::cout << len << std::endl;
             if (len == -1) {
                 _request.erase(_client_socket[i]);
                 _response.erase(_client_socket[i]);

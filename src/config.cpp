@@ -58,7 +58,7 @@ Config &Config::operator=(Config const &src) {
     _index = src._index;
     _error_page = src._error_page;
     _buffer_size = src._buffer_size;
-    _locations = _locations;
+    _locations = src._locations;
     _name = src._name;
     return (*this);
 }

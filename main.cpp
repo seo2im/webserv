@@ -3,6 +3,11 @@
 int main(int ac, char *av[]) {
     App app;
 
+    if (ac != 2) {
+        std::cerr << "ERROR: no set configuration file\n";
+        return 1;
+    }
+
     try {
         app.init(av[1]);
         std::cout << "CONFIG SETTING CLEAR!!\n"; 

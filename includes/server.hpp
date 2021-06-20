@@ -41,17 +41,16 @@ class Server {
         void disconnect_all();
         void disconnect(int i);
         void accept_client();
-        void reading(fd_set &read, fd_set &write);
-        void writing(fd_set &read, fd_set &write);
-        void recv_from_client(fd_set &read, fd_set &write);
+        void reading(fd_set &read);
+        void writing(fd_set &write);
+        void recv_from_client(fd_set &read);
         void make_response(int fd, std::string raw);
         void close_server();
         
         class SocketException : public std::exception {
-            public :
-                const char* what() {
-                    return "SOCKET PROBLEM";
-                }
+            virtual const char* what() const throw() {
+                return "Socket Error";
+            };
         };
 };
 
